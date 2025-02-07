@@ -39,8 +39,7 @@ active = {
 urls = (
     "/", "Main",
     "/meta", "SparqlMeta",
-    "/index", "SparqlIndex",
-    '/header', 'Header'
+    "/index", "SparqlIndex"
 )
 
 # Set the web logger
@@ -57,7 +56,12 @@ web_logger = WebLogger("sparql.opencitations.net", c["log_dir"], [
      {"REMOTE_ADDR": ["130.136.130.1", "130.136.2.47", "127.0.0.1"]}
 )
 
-render = web.template.render(c["html"])
+# render = web.template.render(c["html"])
+render = web.template.render(c["html"], globals={
+    'str': str,
+    'isinstance': isinstance,
+    'render': lambda *args, **kwargs: render(*args, **kwargs)
+})
 
 # App Web.py
 app = web.application(urls, globals())
