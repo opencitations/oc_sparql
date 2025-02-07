@@ -39,6 +39,7 @@ active = {
 urls = (
     "/", "Main",
     "/meta", "SparqlMeta",
+    '/favicon.ico', 'Favicon',
     "/index", "SparqlIndex"
 )
 
@@ -66,6 +67,9 @@ render = web.template.render(c["html"], globals={
 # App Web.py
 app = web.application(urls, globals())
 
+# Process favicon.ico requests
+class Favicon:
+    def GET(self): raise web.seeother("/static/favicon.ico")
 
 class Header:
     def GET(self):

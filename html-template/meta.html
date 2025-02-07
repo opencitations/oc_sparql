@@ -28,7 +28,7 @@ $def with (active, sp_title, sparql_endpoint, current_subdomain, render)
   </head>
   <body>
 
-    $:render.header(sp_title, current_subdomain)
+    $:render.common.header(sp_title, current_subdomain)
 
     <div class="cover-container">
       <div class="cover left">
@@ -42,13 +42,13 @@ $def with (active, sp_title, sparql_endpoint, current_subdomain, render)
     </div>
 
     <!-- footer start -->
-    $:render.footer()
+    $:render.common.footer()
     <!-- footer end -->
     <!-- yasr localstorage removal -->
-      <script>
-        if (localStorage.getItem("yasr_yasr_results") !== null) {
-          localStorage.removeItem("yasr_yasr_results");
-        }
+    <script>
+      if (localStorage.getItem("yasr_yasr_results") !== null) {
+        localStorage.removeItem("yasr_yasr_results");
+      }
     </script>
     <!--  -->
     
