@@ -1,0 +1,117 @@
+$def with (active, sp_title, sparql_endpoint, current_subdomain, render)
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="icon" href="/static/favicon.ico" />
+    <title>OpenCitations - OpenCitations $sp_title SPARQL endpoint</title>
+
+
+    <!-- Font Awesome -->
+    <link href="/static/css/font-awesome.min.css" rel="stylesheet" />
+
+    <!-- YASGUI CSS -->
+    <link href="/static/css/yasgui.css" rel="stylesheet" type="text/css" />
+
+    <!-- Custom styles for this template -->
+    <link href="/static/css/cover.css" rel="stylesheet" />
+    <!-- Bootstrap core CSS -->
+    <link
+      href="/static/bootstrap-533/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="/static/css/custom.css" class="css" />
+  </head>
+  <body>
+
+    $:render.header(sp_title, current_subdomain)
+
+    <div class="cover-container">
+      <div class="cover left">
+        <h3>
+          <span class="oc-purple">Open</span
+          ><span class="oc-blue">Citations</span> Meta SPARQL endpoint
+        </h3>
+        <div id="yasqe"></div>
+        <div id="yasr"></div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <div class="row justify-content-center text-center">
+          <div id="disi" class="col-12 col-sm-2">
+            <p class="mb-3">
+              <a href="http://www.unibo.it"
+                ><img src="/static/img/unibo.png" class="img-fluid"
+              /></a>
+            </p>
+          </div>
+          <div id="ficlit" class="col-12 col-sm-2">
+            <p class="mb-3">
+              <a href="http://www.ficlit.unibo.it"
+                ><img src="/static/img/ficlit.png" class="img-fluid"
+              /></a>
+            </p>
+          </div>
+          <div id="openscholarlymetadata" class="col-12 col-sm-2">
+            <p class="mb-3">
+              <a href="https://openscholarlymetadata.org"
+                ><img
+                  src="/static/img/openscholarlymetadata.png"
+                  class="img-fluid"
+              /></a>
+            </p>
+          </div>
+        </div>
+      </div>
+      <p class="text-center mt-3">
+        <a class="policy oc-purple" href="https://opencitations.net/policy"
+          >Privacy Policies</a
+        >
+        <span class="separator"></span>
+        <a class="social oc-purple" href="mailto:contact@opencitations.net"
+          ><i class="fa fa-envelope" aria-hidden="true"></i
+        ></a>
+        <a class="social oc-purple" href="http://www.twitter.com/opencitations"
+          ><i class="fa fa-twitter" aria-hidden="true"></i
+        ></a>
+        <a class="social oc-blue" href="http://github.com/opencitations"
+          ><i class="fa fa-github" aria-hidden="true"></i
+        ></a>
+        <a
+          class="social oc-blue"
+          href="https://www.linkedin.com/company/opencitations/"
+          ><i class="fa fa-linkedin" aria-hidden="true"></i
+        ></a>
+        <a class="social oc-blue" href="https://opencitations.hypotheses.org/"
+          ><i class="fa fa-newspaper-o" aria-hidden="true"></i
+        ></a>
+      </p>
+      <a href="https://opencitations.net" class="back-home-link">
+        Back to OC Home Page
+      </a>
+    </footer>
+    <!-- Bootstrap JS -->
+    <script src="/static/bootstrap-533/js/bootstrap.bundle.min.js"></script>
+    <!-- SPARQL GUI -->
+    <script src="/static/js/yasr.bundled.min.js"></script>
+    <script src="/static/js/yasqe.bundled.min.js"></script>
+    <script src="/static/js/sparql.js"></script>
+    <script>
+      yasqe.options.sparql.endpoint = "$sparql_endpoint";
+      var sparql_value =
+        'PREFIX datacite: <http://purl.org/spar/datacite/>\nPREFIX dcterms: <http://purl.org/dc/terms/>\nPREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>\nPREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>\nSELECT ?id ?title ?pub_date {\n  	?identifier literal:hasLiteralValue "10.1162/qss_a_00023".\n    ?br datacite:hasIdentifier ?identifier;\n    	dcterms:title ?title;\n    	prism:publicationDate ?publicationDate.\n  	BIND(STR(?publicationDate) AS ?pub_date)\n    BIND((CONCAT("doi:", "10.1162/qss_a_00023")) AS ?id)\n}';
+      yasqe.setValue(sparql_value);
+      yasqe.options.sparql.callbacks.complete = yasr.setResponse;
+    </script>
+
+    <!-- Cookies handler
+        ================================================== -->
+    <script src="/static/js/cookies.js"></script>
+  </body>
+</html>
