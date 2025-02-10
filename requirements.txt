@@ -38,3 +38,4 @@ yapf
 web.py
 SPARQLWrapper
 gitpython
+APScheduler==3.10.1

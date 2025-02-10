@@ -7,6 +7,8 @@ import urllib.parse as urlparse
 import re
 from urllib.parse import parse_qs
 from rdflib.plugins.sparql.parser import parseUpdate
+from apscheduler.schedulers.background import BackgroundScheduler
+import subprocess
 
 # Docker ENV variables
 sparql_config = {
@@ -57,7 +59,6 @@ web_logger = WebLogger("sparql.opencitations.net", c["log_dir"], [
      {"REMOTE_ADDR": ["130.136.130.1", "130.136.2.47", "127.0.0.1"]}
 )
 
-# render = web.template.render(c["html"])
 render = web.template.render(c["html"], globals={
     'str': str,
     'isinstance': isinstance,
@@ -67,16 +68,34 @@ render = web.template.render(c["html"], globals={
 # App Web.py
 app = web.application(urls, globals())
 
+def sync_static_files():
+    """
+    Function to synchronize static files using sync_static.py
+    """
+    try:
+        print("Starting static files synchronization...")
+        subprocess.run(["python3", "sync_static.py", "--auto"], check=True)
+        print("Static files synchronization completed")
+    except subprocess.CalledProcessError as e:
+        print(f"Error during static files synchronization: {e}")
+    except Exception as e:
+        print(f"Unexpected error during synchronization: {e}")
+
+# Initialize the scheduler for periodic sync
+scheduler = BackgroundScheduler()
+scheduler.add_job(sync_static_files, 'interval', minutes=30)
+scheduler.start()
+
 # Process favicon.ico requests
 class Favicon:
-    def GET(self): raise web.seeother("/static/favicon.ico")
+    def GET(self): 
+        raise web.seeother("/static/favicon.ico")
 
 class Header:
     def GET(self):
         current_subdomain = web.ctx.host.split('.')[0].lower()
         return render.header(sp_title="", current_subdomain=current_subdomain)
 
-# Classe per la pagina iniziale
 class Sparql:
     def __init__(self, sparql_endpoint, sparql_endpoint_title, yasqe_sparql_endpoint):
         self.sparql_endpoint = sparql_endpoint
@@ -91,7 +110,6 @@ class Sparql:
 
     def POST(self):
         content_type = web.ctx.env.get('CONTENT_TYPE')
-
         cur_data = web.data().decode("utf-8")
 
         if "application/x-www-form-urlencoded" in content_type:
@@ -103,10 +121,10 @@ class Sparql:
                 return self.__contact_tp(sanitizedQuery, True, content_type)
             else:
                 raise web.HTTPError(
-                            "403 ",
-                            {"Content-Type": "text/plain"},
-                            "SPARQL Update queries are not permitted."
-                        )
+                    "403 ",
+                    {"Content-Type": "text/plain"},
+                    "SPARQL Update queries are not permitted."
+                )
         else:
             raise web.redirect("/")
 
@@ -116,10 +134,10 @@ class Sparql:
             accept = "application/sparql-results+xml"
         if is_post:
             req = requests.post(self.sparql_endpoint, data={'query': data},
-                                headers={'content-type': content_type, "accept": accept})
+                              headers={'content-type': content_type, "accept": accept})
         else:
             req = requests.get("%s?query=%s" % (self.sparql_endpoint, data),
-                            headers={'content-type': content_type, "accept": accept})
+                             headers={'content-type': content_type, "accept": accept})
 
         if req.status_code == 200:
             web.header('Access-Control-Allow-Origin', '*')
@@ -127,24 +145,22 @@ class Sparql:
             web.header('Content-Type', req.headers["content-type"])
             web_logger.mes()
             req.encoding = "utf-8"
-
             return req.text
         else:
             raise web.HTTPError(
                 str(req.status_code)+" ", {"Content-Type": req.headers["content-type"]}, req.text)
 
     def __is_update_query(self, query):
-       query = re.sub(r'^\s*#.*$', '', query, flags=re.MULTILINE)
-       query = '\n'.join(line for line in query.splitlines() if line.strip()) 
-       try:
+        query = re.sub(r'^\s*#.*$', '', query, flags=re.MULTILINE)
+        query = '\n'.join(line for line in query.splitlines() if line.strip()) 
+        try:
             parseUpdate(query)
             return True, 'UPDATE query not allowed'
-       except Exception:
+        except Exception:
             return False, query
 
-
     def __run_query_string(self, active, query_string, is_post=False,
-                       content_type="application/x-www-form-urlencoded"):
+                          content_type="application/x-www-form-urlencoded"):
         parsed_query = urlparse.parse_qs(query_string)
         current_subdomain = web.ctx.host.split('.')[0].lower()
         if query_string is None or query_string.strip() == "":
@@ -186,13 +202,15 @@ class Main:
 class SparqlIndex(Sparql):
     def __init__(self):
         Sparql.__init__(self, sparql_config["sparql_endpoint_index"],
-                        "index", "/index")
+                       "index", "/index")
+
 class SparqlMeta(Sparql):
     def __init__(self):
         Sparql.__init__(self, sparql_config["sparql_endpoint_meta"],
-                        "meta", "/meta")
+                       "meta", "/meta")
 
-
-# Esegui l'applicazione
+# Run the application
 if __name__ == "__main__":
+    # Run initial sync at startup
+    sync_static_files()
     app.run()
