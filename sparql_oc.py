@@ -10,6 +10,7 @@ from rdflib.plugins.sparql.parser import parseUpdate
 from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
 import sys
+import argparse
 
 # Docker ENV variables
 sparql_config = {
@@ -210,8 +211,33 @@ class SparqlMeta(Sparql):
         Sparql.__init__(self, sparql_config["sparql_endpoint_meta"],
                        "meta", "/meta")
 
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(sync_static_files, 'interval', minutes=30)
+
 # Run the application
 if __name__ == "__main__":
-    # Run initial sync at startup
-    sync_static_files()
-    app.run()
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='SPARQL OpenCitations web application')
+    parser.add_argument(
+        '--sync-static',
+        action='store_true',
+        help='synchronize static files at startup and enable periodic sync'
+    )
+    parser.add_argument(
+        '--port',
+        type=int,
+        default=8080,
+        help='port to run the application on (default: 8080)'
+    )
+    
+    args = parser.parse_args()
+    
+    if args.sync_static:
+        # Run initial sync
+        sync_static_files()
+        # Start periodic sync
+        scheduler.start()
+    
+    # Set the port for web.py
+    web.httpserver.runsimple(app.wsgifunc(), ("0.0.0.0", args.port))

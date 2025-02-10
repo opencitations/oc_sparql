@@ -29,6 +29,30 @@ SPARQL_ENDPOINT_INDEX=http://qlever-service.default.svc.cluster.local:7011
 SPARQL_ENDPOINT_META=http://virtuoso-service.default.svc.cluster.local:8890/sparql
 ```
 
+## Running Options
+
+The application supports the following command line arguments:
+
+- `--sync-static`: Synchronize static files at startup and enable periodic sync (every 30 minutes)
+- `--port PORT`: Specify the port to run the application on (default: 8080)
+
+Examples:
+```bash
+# Run with default settings
+python3 sparql_oc.py
+
+# Run with static sync enabled
+python3 sparql_oc.py --sync-static
+
+# Run on custom port
+python3 sparql_oc.py --port 8085
+
+# Run with both options
+python3 sparql_oc.py --sync-static --port 8085
+```
+
+The Docker container is configured to run with `--sync-static` enabled by default.
+
 ### Dockerfile
 
 You can change these variables in the Dockerfile:
@@ -68,5 +92,5 @@ EXPOSE 8080
 
 # Start the application
 # The Python script will now read environment variables for SPARQL configurations
-CMD ["python3", "sparql_oc.py"]
+CMD ["python3", "sparql_oc.py", "--sync-static"]
 ```
