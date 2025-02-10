@@ -9,6 +9,7 @@ from urllib.parse import parse_qs
 from rdflib.plugins.sparql.parser import parseUpdate
 from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
+import sys
 
 # Docker ENV variables
 sparql_config = {
@@ -74,7 +75,7 @@ def sync_static_files():
     """
     try:
         print("Starting static files synchronization...")
-        subprocess.run(["python3", "sync_static.py", "--auto"], check=True)
+        subprocess.run([sys.executable, "sync_static.py", "--auto"], check=True)
         print("Static files synchronization completed")
     except subprocess.CalledProcessError as e:
         print(f"Error during static files synchronization: {e}")
