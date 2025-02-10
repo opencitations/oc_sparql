@@ -37,3 +37,4 @@ wrapt
 yapf
 web.py
 SPARQLWrapper
+gitpython
