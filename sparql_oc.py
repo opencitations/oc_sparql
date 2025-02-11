@@ -11,17 +11,19 @@ import subprocess
 import sys
 import argparse
 
-# Docker ENV variables
-sparql_config = {
-    "sparql_base_url": os.getenv("SPARQL_BASE_URL", "sparql.opencitations.net"),
-    "sparql_endpoint_index": os.getenv("SPARQL_ENDPOINT_INDEX", "http://qlever-service.default.svc.cluster.local:7011"),
-    "sparql_endpoint_meta": os.getenv("SPARQL_ENDPOINT_META", "http://virtuoso-service.default.svc.cluster.local:8890/sparql"),
-    "sparql_sync_enabled": os.getenv("SPARQL_SYNC_ENABLED", "false").lower() == "true"
-}
-
 # Load the configuration file
 with open("conf.json") as f:
     c = json.load(f)
+
+
+# Docker ENV variables
+sparql_config = {
+    "sparql_base_url": os.getenv("SPARQL_BASE_URL", c["sparql_base_url"]),
+    "sparql_endpoint_index": os.getenv("SPARQL_ENDPOINT_INDEX", c["sparql_endpoint_index"]),
+    "sparql_endpoint_meta": os.getenv("SPARQL_ENDPOINT_META", c["sparql_endpoint_meta"]),
+    "sparql_sync_enabled": os.getenv("SPARQL_SYNC_ENABLED", "false").lower() == "true"
+}
+
 
 active = {
     "corpus": "datasets",
