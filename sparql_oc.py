@@ -210,6 +210,11 @@ class SparqlMeta(Sparql):
 
 # Run the application
 if __name__ == "__main__":
+    # Add startup log
+    print("Starting SPARQL OpenCitations web application...")
+    print(f"Configuration: Base URL={sparql_config['sparql_base_url']}")
+    print(f"Sync enabled: {sparql_config['sparql_sync_enabled']}")
+    
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='SPARQL OpenCitations web application')
     parser.add_argument(
@@ -225,11 +230,16 @@ if __name__ == "__main__":
     )
     
     args = parser.parse_args()
+    print(f"Starting on port: {args.port}")
     
     if args.sync_static or sparql_config["sparql_sync_enabled"]:
         # Run sync if either --sync-static is provided (local testing) 
         # or SPARQL_SYNC_ENABLED=true (Docker environment)
+        print("Static sync is enabled")
         sync_static_files()
+    else:
+        print("Static sync is disabled")
     
+    print("Starting web server...")
     # Set the port for web.py
     web.httpserver.runsimple(app.wsgifunc(), ("0.0.0.0", args.port))
