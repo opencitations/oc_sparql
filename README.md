@@ -23,10 +23,18 @@ The service provides two main SPARQL endpoints:
 
 The service requires the following environment variables:
 
+- `SPARQL_BASE_URL`: Base URL for the SPARQL endpoint
+- `SPARQL_ENDPOINT_INDEX`: URL for the index SPARQL endpoint
+- `SPARQL_ENDPOINT_META`: URL for the meta SPARQL endpoint
+- `SPARQL_SYNC_ENABLED`: Enable/disable static files synchronization (default: false)
+
+For instance:
+
 ```env
 SPARQL_BASE_URL=sparql.opencitations.net
 SPARQL_ENDPOINT_INDEX=http://qlever-service.default.svc.cluster.local:7011  
 SPARQL_ENDPOINT_META=http://virtuoso-service.default.svc.cluster.local:8890/sparql
+SPARQL_SYNC_ENABLED=true
 ```
 
 ## Running Options
@@ -65,7 +73,8 @@ FROM python:3.11-slim
 # These can be overridden during container runtime
 ENV SPARQL_BASE_URL="sparql.opencitations.net" \
     SPARQL_ENDPOINT_INDEX="http://qlever-service.default.svc.cluster.local:7011" \
-    SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql"
+    SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
+    SPARQL_SYNC_ENABLED="true"
 
 # Install system dependencies required for Python package compilation
 # We clean up apt cache after installation to reduce image size
@@ -92,5 +101,5 @@ EXPOSE 8080
 
 # Start the application
 # The Python script will now read environment variables for SPARQL configurations
-CMD ["python3", "sparql_oc.py", "--sync-static"]
+CMD ["python3", "sparql_oc.py"]
 ```

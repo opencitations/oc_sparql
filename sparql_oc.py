@@ -7,7 +7,6 @@ import urllib.parse as urlparse
 import re
 from urllib.parse import parse_qs
 from rdflib.plugins.sparql.parser import parseUpdate
-from apscheduler.schedulers.background import BackgroundScheduler
 import subprocess
 import sys
 import argparse
@@ -16,7 +15,8 @@ import argparse
 sparql_config = {
     "sparql_base_url": os.getenv("SPARQL_BASE_URL", "sparql.opencitations.net"),
     "sparql_endpoint_index": os.getenv("SPARQL_ENDPOINT_INDEX", "http://qlever-service.default.svc.cluster.local:7011"),
-    "sparql_endpoint_meta": os.getenv("SPARQL_ENDPOINT_META", "http://virtuoso-service.default.svc.cluster.local:8890/sparql")
+    "sparql_endpoint_meta": os.getenv("SPARQL_ENDPOINT_META", "http://virtuoso-service.default.svc.cluster.local:8890/sparql"),
+    "sparql_sync_enabled": os.getenv("SPARQL_SYNC_ENABLED", "false").lower() == "true"
 }
 
 # Load the configuration file
@@ -83,10 +83,6 @@ def sync_static_files():
     except Exception as e:
         print(f"Unexpected error during synchronization: {e}")
 
-# Initialize the scheduler for periodic sync
-scheduler = BackgroundScheduler()
-scheduler.add_job(sync_static_files, 'interval', minutes=30)
-scheduler.start()
 
 # Process favicon.ico requests
 class Favicon:
@@ -212,9 +208,6 @@ class SparqlMeta(Sparql):
                        "meta", "/meta")
 
 
-scheduler = BackgroundScheduler()
-scheduler.add_job(sync_static_files, 'interval', minutes=30)
-
 # Run the application
 if __name__ == "__main__":
     # Parse command line arguments
@@ -222,7 +215,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--sync-static',
         action='store_true',
-        help='synchronize static files at startup and enable periodic sync'
+        help='synchronize static files at startup (for local testing or development)'
     )
     parser.add_argument(
         '--port',
@@ -233,11 +226,10 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    if args.sync_static:
-        # Run initial sync
+    if args.sync_static or sparql_config["sparql_sync_enabled"]:
+        # Run sync if either --sync-static is provided (local testing) 
+        # or SPARQL_SYNC_ENABLED=true (Docker environment)
         sync_static_files()
-        # Start periodic sync
-        scheduler.start()
     
     # Set the port for web.py
     web.httpserver.runsimple(app.wsgifunc(), ("0.0.0.0", args.port))
