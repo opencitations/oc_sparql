@@ -39,6 +39,36 @@ SPARQL_SYNC_ENABLED=true
 
 > **Note**: When running with Docker, environment variables always override the corresponding values in `conf.json`. If an environment variable is not set, the application will fall back to the values defined in `conf.json`.
 
+### Static Files Synchronization
+
+The application can synchronize static files from a GitHub repository. This configuration is managed in `conf.json`:
+
+```json
+{
+  "oc_services_templates": "https://github.com/opencitations/oc_services_templates",
+  "sync": {
+    "folders": [
+      "static",
+      "html-template/common"
+    ],
+    "files": [
+      "test.txt"
+    ]
+  }
+}
+```
+
+- `oc_services_templates`: The GitHub repository URL to sync files from
+- `sync.folders`: List of folders to synchronize
+- `sync.files`: List of individual files to synchronize
+
+When static sync is enabled (via `--sync-static` or `SPARQL_SYNC_ENABLED=true`), the application will:
+1. Clone the specified repository
+2. Copy the specified folders and files
+3. Keep the local static files up to date
+
+> **Note**: Make sure the specified folders and files exist in the source repository.
+
 ## Running Options
 
 The application supports the following command line arguments:
@@ -104,4 +134,3 @@ EXPOSE 8080
 # Start the application
 # The Python script will now read environment variables for SPARQL configurations
 CMD ["python3", "sparql_oc.py"]
-```
