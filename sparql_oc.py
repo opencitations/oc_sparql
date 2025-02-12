@@ -118,7 +118,7 @@ class Sparql:
             isupdate = None
             isupdate, sanitizedQuery = self.__is_update_query(cur_data)
             if not isupdate:
-                return self.__contact_tp(sanitizedQuery, True, content_type)
+                return self.__contact_tp(cur_data, True, content_type)
             else:
                 raise web.HTTPError(
                     "403 ",
@@ -133,10 +133,10 @@ class Sparql:
         if accept is None or accept == "*/*" or accept == "":
             accept = "application/sparql-results+xml"
         if is_post:
-            req = requests.post(self.sparql_endpoint, data={'query': data},
+            req = requests.post(self.sparql_endpoint, data=data,
                               headers={'content-type': content_type, "accept": accept})
         else:
-            req = requests.get("%s?query=%s" % (self.sparql_endpoint, data),
+            req = requests.get("%s?%s" % (self.sparql_endpoint, data),
                              headers={'content-type': content_type, "accept": accept})
 
         if req.status_code == 200:
@@ -185,7 +185,7 @@ class Sparql:
                             "SPARQL Update queries are not permitted."
                         )
                     else:
-                        return self.__contact_tp(sanitizedQuery, is_post, content_type)
+                        return self.__contact_tp(query_string, is_post, content_type)
 
         raise web.HTTPError(
             "408",
