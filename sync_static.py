@@ -5,9 +5,28 @@ import filecmp
 from git import Repo
 import tempfile
 import argparse
-from typing import Dict, List, Tuple
+import json
+from typing import Dict, List, Tuple, Set
 
-OC_SERVICES_TEMPLATES = 'https://github.com/opencitations/oc_services_templates'
+# Load the configuration file
+with open("conf.json") as f:
+    c = json.load(f)
+
+OC_SERVICES_TEMPLATES = os.getenv("OC_SERVICES_TEMPLATES", c["oc_services_templates"])
+
+class SyncConfig:
+    def __init__(self, folders: Set[str], files: Set[str]):
+        self.folders = folders
+        self.files = files
+
+    def __str__(self):
+        parts = []
+        if self.folders:
+            parts.append(f"Folders: {', '.join(self.folders)}")
+        if self.files:
+            parts.append(f"Files: {', '.join(self.files)}")
+        return " | ".join(parts)
+
 
 class ChangeTracker:
     def __init__(self):
@@ -44,7 +63,42 @@ class ChangeTracker:
         print(f"\nSummary: {len(self.to_add)} additions, {len(self.to_update)} updates")
 
 
+def load_sync_config() -> SyncConfig:
+    """
+    Load sync configuration from config.json
+    Returns a SyncConfig object containing sets of folders and files to sync
+    """
+    try:
+        with open("conf.json") as f:
+            config = json.load(f)
+            
+        sync_config = config.get("sync", {
+            "folders": ["static"],
+            "files": []
+        })
+        
+        folders = set(sync_config.get("folders", ["static"]))
+        files = set(sync_config.get("files", []))
+        
+        config = SyncConfig(folders, files)
+        print(f"Loaded sync configuration: {config}")
+        return config
+            
+    except FileNotFoundError:
+        print("Warning: conf.json not found, using default sync path: 'static'")
+        return SyncConfig({"static"}, set())
+    except json.JSONDecodeError:
+        print("Warning: Invalid conf.json format, using default sync path: 'static'")
+        return SyncConfig({"static"}, set())
+    except Exception as e:
+        print(f"Warning: Error loading conf.json ({str(e)}), using default sync path: 'static'")
+        return SyncConfig({"static"}, set())
+
+
 def check_file_update(src: str, dst: str) -> bool:
+    """
+    Check if a file needs to be updated based on modification time and content
+    """
     if not os.path.exists(dst):
         return True
     
@@ -54,7 +108,27 @@ def check_file_update(src: str, dst: str) -> bool:
     return src_time > dst_time and not filecmp.cmp(src, dst, shallow=False)
 
 
-def scan_changes(src_dir: str, dst_dir: str, tracker: ChangeTracker) -> None:
+def should_sync_path(path: str, config: SyncConfig) -> bool:
+    """
+    Check if a path should be synced based on the configuration
+    """
+    path = path.rstrip(os.sep)
+    
+    # Check if the path is a specific file that should be synced
+    if path in config.files:
+        return True
+        
+    # Check if the path is within a folder that should be synced
+    return any(
+        path == folder or path.startswith(folder + os.sep)
+        for folder in config.folders
+    )
+
+
+def scan_changes(src_dir: str, dst_dir: str, tracker: ChangeTracker, config: SyncConfig) -> None:
+    """
+    Scan for changes between source and destination directories
+    """
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir)
 
@@ -66,8 +140,12 @@ def scan_changes(src_dir: str, dst_dir: str, tracker: ChangeTracker) -> None:
         dst_path = os.path.join(dst_dir, item)
         rel_path = os.path.relpath(dst_path, os.getcwd())
         
+        # Skip if path is not in sync configuration
+        if not should_sync_path(rel_path, config):
+            continue
+            
         if os.path.isdir(src_path):
-            scan_changes(src_path, dst_path, tracker)
+            scan_changes(src_path, dst_path, tracker, config)
         else:
             if not os.path.exists(dst_path):
                 tracker.add_file(rel_path)
@@ -75,7 +153,10 @@ def scan_changes(src_dir: str, dst_dir: str, tracker: ChangeTracker) -> None:
                 tracker.update_file(rel_path)
 
 
-def sync_files(src_dir: str, dst_dir: str) -> None:
+def sync_files(src_dir: str, dst_dir: str, config: SyncConfig) -> None:
+    """
+    Synchronize files from source to destination directory
+    """
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir)
         print(f"Created directory: {dst_dir}")
@@ -88,8 +169,12 @@ def sync_files(src_dir: str, dst_dir: str) -> None:
         dst_path = os.path.join(dst_dir, item)
         rel_path = os.path.relpath(dst_path, os.getcwd())
         
+        # Skip if path is not in sync configuration
+        if not should_sync_path(rel_path, config):
+            continue
+            
         if os.path.isdir(src_path):
-            sync_files(src_path, dst_path)
+            sync_files(src_path, dst_path, config)
         elif check_file_update(src_path, dst_path):
             action = "Added" if not os.path.exists(dst_path) else "Updated"
             shutil.copy2(src_path, dst_path)
@@ -97,8 +182,14 @@ def sync_files(src_dir: str, dst_dir: str) -> None:
 
 
 def sync_repository(auto_mode: bool = False) -> None:
+    """
+    Main function to handle repository synchronization
+    """
     cwd = os.getcwd()
     print(f"Working directory: {cwd}")
+    
+    # Load sync configuration
+    config = load_sync_config()
     
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
@@ -108,7 +199,7 @@ def sync_repository(auto_mode: bool = False) -> None:
             if not auto_mode:
                 tracker = ChangeTracker()
                 print("\nAnalyzing repository...")
-                scan_changes(temp_dir, cwd, tracker)
+                scan_changes(temp_dir, cwd, tracker, config)
                 
                 tracker.print_plan()
                 
@@ -121,7 +212,7 @@ def sync_repository(auto_mode: bool = False) -> None:
                 
                 print("\nApplying changes...")
             
-            sync_files(temp_dir, cwd)
+            sync_files(temp_dir, cwd, config)
             print("\nSync completed successfully!")
             
         except Exception as e:

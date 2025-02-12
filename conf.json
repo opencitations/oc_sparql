@@ -1,7 +1,17 @@
 {
   "html": "html-template",
   "log_dir": "./log/",
+  "oc_services_templates": "https://github.com/opencitations/oc_services_templates",
   "sparql_base_url": "sparql.opencitations.net",
   "sparql_endpoint_index": "http://qlever-service.default.svc.cluster.local:7011",
-  "sparql_endpoint_meta": "http://virtuoso-service.default.svc.cluster.local:8890/sparql"
+  "sparql_endpoint_meta": "http://virtuoso-service.default.svc.cluster.local:8890/sparql",
+  "sync": {
+    "folders": [
+        "static",
+        "html-template/common"
+    ],
+    "files": [
+        "test.txt"
+    ]
+}
 }
