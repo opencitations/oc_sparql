@@ -21,7 +21,7 @@ The service provides two main SPARQL endpoints:
 
 ### Environment Variables
 
-The service requires the following environment variables:
+The service requires the following environment variables. These values take precedence over the ones defined in `conf.json`:
 
 - `SPARQL_BASE_URL`: Base URL for the SPARQL endpoint
 - `SPARQL_ENDPOINT_INDEX`: URL for the index SPARQL endpoint
@@ -36,6 +36,8 @@ SPARQL_ENDPOINT_INDEX=http://qlever-service.default.svc.cluster.local:7011
 SPARQL_ENDPOINT_META=http://virtuoso-service.default.svc.cluster.local:8890/sparql
 SPARQL_SYNC_ENABLED=true
 ```
+
+> **Note**: When running with Docker, environment variables always override the corresponding values in `conf.json`. If an environment variable is not set, the application will fall back to the values defined in `conf.json`.
 
 ## Running Options
 
