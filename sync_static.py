@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import os
 import shutil
-import filecmp
 from git import Repo
 import tempfile
 import argparse
 import json
+import hashlib
 from typing import Dict, List, Tuple, Set
 
 # Load the configuration file
@@ -26,7 +26,6 @@ class SyncConfig:
         if self.files:
             parts.append(f"Files: {', '.join(self.files)}")
         return " | ".join(parts)
-
 
 class ChangeTracker:
     def __init__(self):
@@ -56,18 +55,92 @@ class ChangeTracker:
                 print(f"  + {f}")
                 
         if self.to_update:
-            print("\nUpdated files:")
+            print("\nModified files:")
             for f in sorted(self.to_update):
                 print(f"  ~ {f}")
                 
-        print(f"\nSummary: {len(self.to_add)} additions, {len(self.to_update)} updates")
+        print(f"\nSummary: {len(self.to_add)} additions, {len(self.to_update)} modifications")
 
+def get_file_hash(filepath: str, chunk_size: int = 8192) -> str:
+    """Calculate normalized content hash"""
+    try:
+        # First try to read as text
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # Normalize line endings
+        content = content.replace('\r\n', '\n')
+        
+        # Remove BOM if present
+        if content.startswith('\ufeff'):
+            content = content[1:]
+            
+        # Remove trailing spaces from lines
+        content = '\n'.join(line.rstrip() for line in content.splitlines())
+        
+        # Calculate hash of normalized content
+        sha1_hash = hashlib.sha1()
+        sha1_hash.update(content.encode('utf-8'))
+        return sha1_hash.hexdigest()
+            
+    except UnicodeDecodeError:
+        # If not text, use binary mode
+        sha1_hash = hashlib.sha1()
+        with open(filepath, 'rb') as f:
+            while chunk := f.read(chunk_size):
+                sha1_hash.update(chunk)
+        return sha1_hash.hexdigest()
+
+def check_file_update(src: str, dst: str) -> bool:
+    """Check if file content has changed by comparing normalized hashes"""
+    if not os.path.exists(dst):
+        return True
+    
+    try:
+        return get_file_hash(src) != get_file_hash(dst)
+    except Exception as e:
+        print(f"Warning: Error checking file update for {src}: {e}")
+        return False
+
+def should_sync_path(path: str, config: SyncConfig) -> bool:
+    """Check if a path should be synced based on the configuration"""
+    path = os.path.normpath(path)
+    
+    # Check if the path is a specific file to sync
+    if path in config.files:
+        return True
+    
+    # For directories, check if this path is either:
+    # 1. A configured directory
+    # 2. A parent of a configured directory
+    # 3. A child of a configured directory
+    for folder in config.folders:
+        folder = os.path.normpath(folder)
+        
+        # Case 1: Exact match
+        if path == folder:
+            return True
+            
+        # Case 2: Current path is a parent directory of a configured folder
+        try:
+            relative = os.path.relpath(folder, path)
+            if not relative.startswith('..'):
+                return True
+        except ValueError:
+            pass
+            
+        # Case 3: Current path is inside a configured folder
+        try:
+            relative = os.path.relpath(path, folder)
+            if not relative.startswith('..'):
+                return True
+        except ValueError:
+            pass
+    
+    return False
 
 def load_sync_config() -> SyncConfig:
-    """
-    Load sync configuration from config.json
-    Returns a SyncConfig object containing sets of folders and files to sync
-    """
+    """Load sync configuration from config.json"""
     try:
         with open("conf.json") as f:
             config = json.load(f)
@@ -94,41 +167,8 @@ def load_sync_config() -> SyncConfig:
         print(f"Warning: Error loading conf.json ({str(e)}), using default sync path: 'static'")
         return SyncConfig({"static"}, set())
 
-
-def check_file_update(src: str, dst: str) -> bool:
-    """
-    Check if a file needs to be updated based on modification time and content
-    """
-    if not os.path.exists(dst):
-        return True
-    
-    src_time = os.path.getmtime(src)
-    dst_time = os.path.getmtime(dst)
-    
-    return src_time > dst_time and not filecmp.cmp(src, dst, shallow=False)
-
-
-def should_sync_path(path: str, config: SyncConfig) -> bool:
-    """
-    Check if a path should be synced based on the configuration
-    """
-    path = path.rstrip(os.sep)
-    
-    # Check if the path is a specific file that should be synced
-    if path in config.files:
-        return True
-        
-    # Check if the path is within a folder that should be synced
-    return any(
-        path == folder or path.startswith(folder + os.sep)
-        for folder in config.folders
-    )
-
-
 def scan_changes(src_dir: str, dst_dir: str, tracker: ChangeTracker, config: SyncConfig) -> None:
-    """
-    Scan for changes between source and destination directories
-    """
+    """Scan for changes between source and destination directories"""
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir)
 
@@ -152,14 +192,10 @@ def scan_changes(src_dir: str, dst_dir: str, tracker: ChangeTracker, config: Syn
             elif check_file_update(src_path, dst_path):
                 tracker.update_file(rel_path)
 
-
 def sync_files(src_dir: str, dst_dir: str, config: SyncConfig) -> None:
-    """
-    Synchronize files from source to destination directory
-    """
+    """Synchronize files from source to destination directory"""
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir)
-        print(f"Created directory: {dst_dir}")
 
     for item in os.listdir(src_dir):
         if item == '.git':
@@ -176,15 +212,13 @@ def sync_files(src_dir: str, dst_dir: str, config: SyncConfig) -> None:
         if os.path.isdir(src_path):
             sync_files(src_path, dst_path, config)
         elif check_file_update(src_path, dst_path):
-            action = "Added" if not os.path.exists(dst_path) else "Updated"
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
             shutil.copy2(src_path, dst_path)
-            print(f"{action}: {rel_path}")
-
+            print(f"Updated: {rel_path}")
 
 def sync_repository(auto_mode: bool = False) -> None:
-    """
-    Main function to handle repository synchronization
-    """
+    """Main function to handle repository synchronization"""
     cwd = os.getcwd()
     print(f"Working directory: {cwd}")
     
@@ -218,7 +252,6 @@ def sync_repository(auto_mode: bool = False) -> None:
         except Exception as e:
             print(f"Error: {str(e)}")
 
-
 def main():
     parser = argparse.ArgumentParser(
         description='Sync files from oc_services_templates repository'
@@ -231,7 +264,6 @@ def main():
     
     args = parser.parse_args()
     sync_repository(args.auto)
-
 
 if __name__ == "__main__":
     main()

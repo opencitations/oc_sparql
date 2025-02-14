@@ -7,7 +7,7 @@
   "sparql_endpoint_meta": "http://virtuoso-service.default.svc.cluster.local:8890/sparql",
   "sync": {
     "folders": [
-        "static",
+        "static/css",
         "html-template/common"
     ],
     "files": [

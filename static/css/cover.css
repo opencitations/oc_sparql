@@ -20,8 +20,9 @@ a:hover {
 }
 
 .social {
-    margin-left: 3px;
-    color: #9931FC;
+  margin-left: 3px;
+  color: #9931FC;
+  text-decoration: none;
 }
 
 .social:hover {
