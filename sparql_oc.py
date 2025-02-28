@@ -21,7 +21,7 @@ sparql_config = {
     "sparql_base_url": os.getenv("SPARQL_BASE_URL", c["sparql_base_url"]),
     "sparql_endpoint_index": os.getenv("SPARQL_ENDPOINT_INDEX", c["sparql_endpoint_index"]),
     "sparql_endpoint_meta": os.getenv("SPARQL_ENDPOINT_META", c["sparql_endpoint_meta"]),
-    "sparql_sync_enabled": os.getenv("SPARQL_SYNC_ENABLED", "false").lower() == "true"
+    "sync_enabled": os.getenv("SYNC_ENABLED", "false").lower() == "true"
 }
 
 
@@ -215,7 +215,7 @@ if __name__ == "__main__":
     # Add startup log
     print("Starting SPARQL OpenCitations web application...")
     print(f"Configuration: Base URL={sparql_config['sparql_base_url']}")
-    print(f"Sync enabled: {sparql_config['sparql_sync_enabled']}")
+    print(f"Sync enabled: {sparql_config['sync_enabled']}")
     
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='SPARQL OpenCitations web application')
@@ -234,9 +234,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(f"Starting on port: {args.port}")
     
-    if args.sync_static or sparql_config["sparql_sync_enabled"]:
+    if args.sync_static or sparql_config["sync_enabled"]:
         # Run sync if either --sync-static is provided (local testing) 
-        # or SPARQL_SYNC_ENABLED=true (Docker environment)
+        # or SYNC_ENABLED=true (Docker environment)
         print("Static sync is enabled")
         sync_static_files()
     else:

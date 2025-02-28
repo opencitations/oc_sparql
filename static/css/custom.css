@@ -85,6 +85,10 @@
   z-index: 1000;
 }
 
+footer {
+    padding-bottom: 1em;
+}
+
 .back-home-link {
   font-family: 'Lato', sans-serif;
   font-weight: 300;

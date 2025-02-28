@@ -26,7 +26,7 @@ The service requires the following environment variables. These values take prec
 - `SPARQL_BASE_URL`: Base URL for the SPARQL endpoint
 - `SPARQL_ENDPOINT_INDEX`: URL for the index SPARQL endpoint
 - `SPARQL_ENDPOINT_META`: URL for the meta SPARQL endpoint
-- `SPARQL_SYNC_ENABLED`: Enable/disable static files synchronization (default: false)
+- `SYNC_ENABLED`: Enable/disable static files synchronization (default: false)
 
 For instance:
 
@@ -34,7 +34,7 @@ For instance:
 SPARQL_BASE_URL=sparql.opencitations.net
 SPARQL_ENDPOINT_INDEX=http://qlever-service.default.svc.cluster.local:7011  
 SPARQL_ENDPOINT_META=http://virtuoso-service.default.svc.cluster.local:8890/sparql
-SPARQL_SYNC_ENABLED=true
+SYNC_ENABLED=true
 ```
 
 > **Note**: When running with Docker, environment variables always override the corresponding values in `conf.json`. If an environment variable is not set, the application will fall back to the values defined in `conf.json`.
@@ -62,7 +62,7 @@ The application can synchronize static files from a GitHub repository. This conf
 - `sync.folders`: List of folders to synchronize
 - `sync.files`: List of individual files to synchronize
 
-When static sync is enabled (via `--sync-static` or `SPARQL_SYNC_ENABLED=true`), the application will:
+When static sync is enabled (via `--sync-static` or `SYNC_ENABLED=true`), the application will:
 1. Clone the specified repository
 2. Copy the specified folders and files
 3. Keep the local static files up to date
@@ -106,7 +106,7 @@ FROM python:3.11-slim
 ENV SPARQL_BASE_URL="sparql.opencitations.net" \
     SPARQL_ENDPOINT_INDEX="http://qlever-service.default.svc.cluster.local:7011" \
     SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
-    SPARQL_SYNC_ENABLED="true"
+    SYNC_ENABLED="true"
 
 # Install system dependencies required for Python package compilation
 # We clean up apt cache after installation to reduce image size
