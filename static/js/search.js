@@ -1,4 +1,3 @@
-
 //GLOBALS
 var oscar_tags = document.getElementsByClassName("__oscar__");
 var oscar_doms = [];
@@ -38,27 +37,27 @@ for (var i = 0; i < oscar_doms.length; i++) {
 	var str_html_inner = '<div id="search_extra" class="search-extra"></div>';
 	//OSCAR view section
 	if (oscar_doms[i]["data-view"].length != 0) {
-		str_html_inner = str_html_inner + '<div id="search_header" class="search-header">';
+		str_html_inner = str_html_inner + '<div id="search_header" class="search-header row gy-3 justify-content-end">';
 		for (var j = 0; j < data_view.length; j++) {
-			str_html_inner = str_html_inner + '<div id='+data_view[j]+'></div>';
+			str_html_inner = str_html_inner + '<div id='+data_view[j]+' class="col-12 col-md-4 row"></div>';
 		}
 		str_html_inner = str_html_inner + '</div>';
 	}
-	str_html_inner = str_html_inner + '<div id="search_body" class="search-body">';
+	str_html_inner = str_html_inner + '<div id="search_body" class="search-body row">';
 
 	//OSCAR filter section
 	if (oscar_doms[i]["data-filter"].length != 0) {
-		str_html_inner = str_html_inner + '<div id="search_filters" class="search-filters">';
+		str_html_inner = str_html_inner + '<div id="search_filters" class="search-filters col-10 col-lg-12 mb-4 mb-lg-0">';
 		for (var j = 0; j < data_filter.length; j++) {
 			switch (data_filter[j]) {
 				case 'limit_results':
-						str_html_inner = str_html_inner + '<div id='+data_filter[j]+'></div><div id="filter_btns"></div>';
+						str_html_inner = str_html_inner + '<div id='+data_filter[j]+' class="mb-3"></div><div id="filter_btns" class="mb-3"></div>';
 					break;
 				case 'filter_fields':
 							str_html_inner = str_html_inner + '<div id="filter_values_list"></div>';
 					break;
 				default:
-						str_html_inner = str_html_inner + '<div id='+data_filter[j]+'></div>';
+						str_html_inner = str_html_inner + '<div id='+data_filter[j]+' class="mb-3"></div>';
 			}
 
 		}
@@ -66,10 +65,10 @@ for (var i = 0; i < oscar_doms.length; i++) {
 	}
 
 	//always put the table of results
-	str_html_inner = str_html_inner + '<div id="search_results" class="search-results"></div></div>';
+	str_html_inner = str_html_inner + '<div id="search_results" class="search-results mx-auto col-10 col-md-12"></div></div>';
 
 	//put it inside the page
-	oscar_doms[i]['container'].innerHTML = '<div id="search" class="search">'+ str_html_inner + '</div>';
+	oscar_doms[i]['container'].innerHTML = '<div id="search" class="search mx-auto">'+ str_html_inner + '</div>';
 }
 
 
@@ -414,84 +413,96 @@ var search = (function () {
 		}
 
 		/*call the SPARQL end point through a GET*/
-		function _call_ts(rule_category, rules, rule_index, sparql_query, query_text=null, query_label=null, callbk_fun=null){
+		function _call_ts(rule_category, rules, rule_index, sparql_query, query_text=null, query_label=null, callbk_fun=null, attempt = 0) {
+			// Progressive timeout: 2s for first try, 10s for retry
+			const timeouts = [2000, 5000, 20000];
+			const currentTimeout = attempt < timeouts.length ? timeouts[attempt] : timeouts[timeouts.length - 1];
+			
+			console.log(`Attempt ${attempt + 1} with timeout ${currentTimeout}ms`);
+			
 			//use this url to contact the sparql_endpoint triple store
-			var query_contact_tp = String(search_conf_json.sparql_endpoint)+"?query="+ encodeURIComponent(sparql_query) +"&format=json";
-
+			var query_contact_tp = String(search_conf_json.sparql_endpoint) + "?query=" + encodeURIComponent(sparql_query) + "&format=json";
+		
 			//reset all doms
 			htmldom.reset_html_structure();
-
+		
 			//put a loader div
-			if (util.get_obj_key_val(search_conf_json,"progress_loader.visible") == true) {
-				htmldom.loader(true,search_conf_json["progress_loader"],query_label);
+			if (util.get_obj_key_val(search_conf_json, "progress_loader.visible") == true) {
+				htmldom.loader(true, search_conf_json["progress_loader"], query_label);
 			}
-
+		
 			//call the sparql end point and retrieve results in json format
 			$.ajax({
-						dataType: "json",
-						url: query_contact_tp,
-						type: 'GET',
-						async: async_call,
-						timeout: util.get_obj_key_val(search_conf_json,"timeout.value"),
-						error: function(jqXHR, textStatus, errorThrown) {
-        				if(textStatus==="timeout") {
-									var redirect_text = util.get_obj_key_val(search_conf_json,"timeout.text");
-									if (redirect_text != undefined) {
-										if (callbk_fun != null) {
-
-											Reflect.apply(callbk_fun,undefined,[
-														callbk_query,
-														JSON.parse(JSON.stringify(table_conf)),
-														JSON.parse(JSON.stringify(cat_conf)),
-														true]);
-
-										 //_init_data({'results':{'bindings':[]}},callbk = callbk_fun, callbk_query = query_text, check_and_update = false);
-									 }else {
-									 	 	htmldom.loader(false, search_conf_json["progress_loader"], on_remove_text = redirect_text);
-									 }
-									}else {
-										var redirect_link = util.get_obj_key_val(search_conf_json,"timeout.link");
-										if (redirect_link != undefined) {
-											window.location.replace(redirect_link);
-										}
-									}
-        				}
-    				},
-						success: function( res_data ) {
-
-								if (util.get_obj_key_val(search_conf_json,"interface") != false) {
-									if (util.get_obj_key_val(search_conf_json,"progress_loader.visible") == true) {
-										htmldom.loader(false, search_conf_json["progress_loader"]);
-									}
+				dataType: "json",
+				url: query_contact_tp,
+				type: 'GET',
+				async: async_call,
+				timeout: currentTimeout,
+				error: function(jqXHR, textStatus, errorThrown) {
+					if (textStatus === "timeout") {
+						console.log(`Timeout on attempt ${attempt + 1}`);
+						
+						if (attempt < timeouts.length - 1) {
+							// Retry with longer timeout
+							console.log(`Retrying with longer timeout...`);
+							_call_ts(rule_category, rules, rule_index, sparql_query, query_text, query_label, callbk_fun, attempt + 1);
+						} else {
+							// All retries exhausted
+							var redirect_text = util.get_obj_key_val(search_conf_json, "timeout.text");
+							if (redirect_text != undefined) {
+								if (callbk_fun != null) {
+									Reflect.apply(callbk_fun, undefined, [
+										callbk_query,
+										JSON.parse(JSON.stringify(table_conf)),
+										JSON.parse(JSON.stringify(cat_conf)),
+										true
+									]);
+								} else {
+									htmldom.loader(false, search_conf_json["progress_loader"], on_remove_text = redirect_text);
 								}
-
-								if ((rule_index >= rules.length -1) || (res_data.results.bindings.length > 0)) {
-									sparql_results = res_data;
-									//I have only 1 rule
-									cat_conf = rule_category;
-
-									//in this case don't build the table directly
-									if (callbk_fun != null) {
-									 //look at the rule name
-									 _init_data(res_data,callbk = callbk_fun, callbk_query = query_text, check_and_update = false);
-								 }else {
-								 	 build_table(res_data);
-								 }
-
-								}else {
-										var sparql_query = _build_sparql_query(rules[rule_index+1], query_text);
-										if(sparql_query != -1){
-												var r_cat = search_conf_json.categories[util.index_in_arrjsons(search_conf_json.categories,["name"],[rules[rule_index+1].category])];
-												_call_ts(r_cat, rules, rule_index + 1, sparql_query, query_text, query_text, callbk_fun);
-										}else {
-											//in this case we have no more rules
-											window.location.replace(search_conf_json.timeout.link);
-										}
+							} else {
+								var redirect_link = util.get_obj_key_val(search_conf_json, "timeout.link");
+								if (redirect_link != undefined) {
+									window.location.replace(redirect_link);
 								}
+							}
 						}
-			 });
-			 return sparql_results;
-		}
+					}
+				},
+				success: function(res_data) {
+					if (util.get_obj_key_val(search_conf_json,"interface") != false) {
+						if (util.get_obj_key_val(search_conf_json,"progress_loader.visible") == true) {
+							htmldom.loader(false, search_conf_json["progress_loader"]);
+						}
+					}
+		
+					if ((rule_index >= rules.length -1) || (res_data.results.bindings.length > 0)) {
+						sparql_results = res_data;
+						//I have only 1 rule
+						cat_conf = rule_category;
+		
+						//in this case don't build the table directly
+						if (callbk_fun != null) {
+						 //look at the rule name
+						 _init_data(res_data,callbk = callbk_fun, callbk_query = query_text, check_and_update = false);
+					 }else {
+						 build_table(res_data);
+					 }
+		
+					}else {
+							var sparql_query = _build_sparql_query(rules[rule_index+1], query_text);
+							if(sparql_query != -1){
+									var r_cat = search_conf_json.categories[util.index_in_arrjsons(search_conf_json.categories,["name"],[rules[rule_index+1].category])];
+									_call_ts(r_cat, rules, rule_index + 1, sparql_query, query_text, query_text, callbk_fun);
+							}else {
+								//in this case we have no more rules
+								window.location.replace(search_conf_json.timeout.link);
+							}
+					}
+				}
+		 });
+		 return sparql_results;
+	}
 
 		function build_table(results_data, do_init = true){
 			var res_data = JSON.parse(JSON.stringify(results_data));
@@ -849,43 +860,43 @@ var search = (function () {
 		}
 
 		/*map the fields with their corresponding links*/
-		function _init_uris(data){
-			var new_data = data;
-			for (var i = 0; i < new_data.length; i++) {
-				var obj_elem = new_data[i];
-				for (var key_field in obj_elem) {
-					if (obj_elem.hasOwnProperty(key_field)) {
-						var index_field = util.index_in_arrjsons(cat_conf.fields,["value"],[key_field]);
-						if (index_field != -1) {
-							var field_obj = cat_conf.fields[index_field];
-							var my_uri = _get_uri(new_data[i], key_field, field_obj);
-							if (my_uri != null) {
-								new_data[i][key_field]["uri"] = my_uri;
-							}
-						}
-					}
-				}
-			}
-			return new_data;
-		}
-		function _get_uri(elem_obj, field, field_obj){
-				var new_elem_obj = elem_obj;
-				var uri = null;
-				var link_obj = field_obj.link;
-				if (link_obj != undefined) {
-					if ((link_obj.field != null) && (link_obj.field != "")) {
-						// I have field to link to
-						if (elem_obj.hasOwnProperty(link_obj.field)) {
-							uri = elem_obj[link_obj.field].value;
-							if (link_obj.hasOwnProperty("prefix")) {
-								uri = String(link_obj.prefix) + uri;
-							}
-							//new_elem_obj[field]["uri"] = uri;
-						}
-					}
-				}
-				return uri;
-		}
+ 		function _init_uris(data){
+ 			var new_data = data;
+ 			for (var i = 0; i < new_data.length; i++) {
+ 				var obj_elem = new_data[i];
+ 				for (var key_field in obj_elem) {
+ 					if (obj_elem.hasOwnProperty(key_field)) {
+ 						var index_field = util.index_in_arrjsons(cat_conf.fields,["value"],[key_field]);
+ 						if (index_field != -1) {
+ 							var field_obj = cat_conf.fields[index_field];
+ 							var my_uri = _get_uri(new_data[i], key_field, field_obj);
+ 							if (my_uri != null) {
+ 								new_data[i][key_field]["uri"] = my_uri;
+ 							}
+ 						}
+ 					}
+ 				}
+ 			}
+ 			return new_data;
+ 		}
+ 		function _get_uri(elem_obj, field, field_obj){
+ 				var new_elem_obj = elem_obj;
+ 				var uri = null;
+ 				var link_obj = field_obj.link;
+ 				if (link_obj != undefined) {
+ 					if ((link_obj.field != null) && (link_obj.field != "")) {
+ 						// I have field to link to
+ 						if (elem_obj.hasOwnProperty(link_obj.field)) {
+ 							uri = elem_obj[link_obj.field].value;
+ 							if (link_obj.hasOwnProperty("prefix")) {
+ 								uri = String(link_obj.prefix) + uri;
+ 							}
+ 							//new_elem_obj[field]["uri"] = uri;
+ 						}
+ 					}
+ 				}
+ 				return uri;
+ 		}
 
 		function _init_val_map(data) {
 			var new_data = data;
@@ -1523,7 +1534,6 @@ var search = (function () {
 			);
 		}
 		function check_sort_opt(option){
-			//console.log(option.getAttribute("value"),option.getAttribute("order"),option.getAttribute("type"));
 			_exec_operation(
 				"sort_results",
 				{
@@ -1584,7 +1594,6 @@ var search = (function () {
 		function prev_filter_page(myfield){
 			myfield = JSON.parse(myfield);
 			table_conf.view.fields_filter_index[myfield.value].i_from -= myfield.config.min;
-			table_conf.view.fields_filter_index[myfield.value].i_to -= myfield.config.min;
 			htmldom.filter_checkboxes(table_conf);
 		}
 		function switch_adv_category(adv_category){
@@ -2133,13 +2142,14 @@ var util = (function () {
 
 var htmldom = (function () {
 
-	var input_box_container = document.getElementsByClassName("form-control oc-purple");
+	var input_box_container = document.getElementsByClassName("form-control theme-color");
 	var results_container = document.getElementById("search_results");
 	var header_container = document.getElementById("search_header");
 	var sort_container = document.getElementById("sort_results");
 	var export_container = document.getElementById("export_results");
 	var rowsxpage_container = document.getElementById("rows_per_page");
 	var limitres_container = document.getElementById("limit_results");
+
 	var filter_btns_container = document.getElementById("filter_btns");
 	var filter_values_container = document.getElementById("filter_values_list");
 	var extra_container = document.getElementById("search_extra");
@@ -2155,8 +2165,15 @@ var htmldom = (function () {
 			var index = cols.indexOf(f_obj["value"]);
 			if (index != -1) {
 				var th = document.createElement("th");
+				// Add data-priority attribute based on importance
+				if (f_obj["iskey"]) {
+					th.setAttribute("data-priority", "1"); // Essential column
+				} else {
+					// Set different priorities based on column position
+					th.setAttribute("data-priority", (i < 3) ? "2" : "3");
+				}
 				if (f_obj["column_width"] != undefined) {
-					th.width = f_obj["column_width"];
+					th.style.width = f_obj["column_width"];
 				}
 				th.innerHTML = f_obj["value"];
 				if (f_obj["title"] != undefined) {
@@ -2269,51 +2286,53 @@ var htmldom = (function () {
 	/*creates the navigation buttons and index of the results table*/
 	function _res_table_pages_nav(arr_values, mypage, tot_pages, tot_res, pages_lim){
 
-		var str_html = _pages_nav(arr_values, mypage + 1, tot_pages);
-		var new_btn = document.createElement("a");
-		//Prev button
-		if(mypage > 0){
-			new_btn = __pages_prev_btn("javascript:search.prev_page()");
-			str_html = "<spanfooter>"+String(new_btn.outerHTML)+"</spanfooter>" + "<spanfooter>"+str_html+"</spanfooter>";
-		}
-		//Next prev
-		var remaining_results = tot_res - ((mypage + 1) * pages_lim);
-		if(remaining_results > 0) {
-			new_btn = __pages_next_btn("javascript:search.next_page()");
-			str_html = "<spanfooter>"+str_html+"</spanfooter>" + "<spanfooter>"+String(new_btn.outerHTML)+"</spanfooter>";
-		}
+		// Create a base pagination with Bootstrap 5.3 classes
+		var paginationHtml = `
+		<nav aria-label="Page navigation">
+			<ul class="pagination pagination-sm flex-wrap justify-content-center">
+				${mypage > 0 ? 
+					`<li class="page-item">
+						<a class="page-link" href="javascript:search.prev_page();" aria-label="Previous">
+							<span aria-hidden="true">&laquo;</span>
+						</a>
+					</li>` : ''
+				}
+				
+				<!-- Page numbers -->
+				${_pages_nav(arr_values, mypage + 1, tot_pages)}
+				
+				${(tot_res - ((mypage + 1) * pages_lim)) > 0 ? 
+					`<li class="page-item">
+						<a class="page-link" href="javascript:search.next_page();" aria-label="Next">
+							<span aria-hidden="true">&raquo;</span>
+						</a>
+					</li>` : ''
+				}
+			</ul>
+		</nav>`;
+		
 		var new_tr = document.createElement("tr");
-		new_tr.innerHTML = str_html;
+		var navCell = document.createElement("td");
+		navCell.colSpan = "100%";
+		navCell.className = "text-center";
+		navCell.innerHTML = paginationHtml;
+		new_tr.appendChild(navCell);
+		
 		return new_tr;
-
-		function __pages_prev_btn(href){
-			var new_btn = document.createElement("a");
-			new_btn.className = "tab-nav-btn prev";
-			new_btn.innerHTML = "&laquo; Previous";
-			new_btn.href = String(href);
-			return new_btn;
-		}
-
-		function __pages_next_btn(href){
-			var new_btn = document.createElement("a");
-			new_btn.className = "tab-nav-btn next";
-			new_btn.innerHTML = "Next &raquo;";
-			new_btn.href = String(href);
-			return new_btn;
-		}
 	}
 	/*create a checbox-field-value entry*/
 	function _checkbox_value(myfield, check_value){
 		var tr = document.createElement("tr");
 		var tabCell = document.createElement("td");
-		tabCell.innerHTML = "<div class='checkbox'><label><input type='checkbox' field="+
+		tabCell.innerHTML = "<div class='form-check py-1'><input class='form-check-input' type='checkbox' field="+
 												myfield.value+" value='"+String(check_value.value)+
 												"' onchange='search.checkbox_changed(this);'"+
 												//"checked='"+check_value.checked+"' "+
-												"id='"+String(myfield.value)+"-"+String(check_value.value)+"' "+
-												">"+
+												(check_value.checked ? "checked" : "") +
+												" id='"+String(myfield.value)+"-"+String(check_value.value)+"' "+
+												"><label class='form-check-label' for='"+String(myfield.value)+"-"+String(check_value.value)+"'>"+
 												check_value.label+" ("+check_value.sum+
-												")</label></div></div>";
+												")</label></div>";
 		tr.appendChild(tabCell);
 		return tr;
 	}
@@ -2330,9 +2349,9 @@ var htmldom = (function () {
 
 		var href_string = "javascript:search.select_filter_field('"+String(myfield.value)+"');";
 		if (!is_closed) {
-			tabCell.innerHTML = "Select <a class='search-a' href="+href_string+">"+ title_val +"<arrow>&#8744;</arrow>"+"</a>";
+			tabCell.innerHTML = "Select <a class='search-a d-block d-sm-inline-block' href="+href_string+">"+ title_val +"<arrow>&#8744;</arrow>"+"</a>";
 		}else {
-			tabCell.innerHTML = "Select <a class='search-a' href="+href_string+">"+ title_val +"<arrow>&#8743;</arrow>"+"</a>";
+			tabCell.innerHTML = "Select <a class='search-a d-block d-sm-inline-block' href="+href_string+">"+ title_val +"<arrow>&#8743;</arrow>"+"</a>";
 		}
 		tr.appendChild(tabCell);
 		return tr;
@@ -2350,7 +2369,7 @@ var htmldom = (function () {
 		}
 		if ((i_from+1)/myfield.config.min >= 1) {
 			var str_href = "javascript:search.prev_filter_page('"+JSON.stringify(myfield)+"')";
-			str_html= "<ar><a class='arrow-nav left' href="+str_href+">&#8678;</a></ar>" + str_html;
+			str_html= "<ar><a class='arrow-nav left' href="+str_href+">&#8678;</a></ar>";
 		}
 
 		tabCell.innerHTML = str_html;
@@ -2376,12 +2395,12 @@ var htmldom = (function () {
 		var onchange_rule = "javascript:htmldom.adv_placeholder('"+param0+"','"+param1+"')";
 
 		var str_html= ""+
-			"<div class='adv-search-entry'>"+
-				"<div class='adv-search-input search-box'>"+
-						"<input entryid="+entryid+" id='adv_input_box_"+entryid+"' class='form-control theme-color' placeholder='"+first_placeholder+"' type='text' name='text'>"+
+			"<div class='adv-search-entry row g-3'>"+
+				"<div class='col-md-8 col-sm-12'>"+
+						"<input entryid="+entryid+" id='adv_input_box_"+entryid+"' class='form-control py-2 theme-color' placeholder='"+first_placeholder+"' type='text' name='text'>"+
 				"</div>"+
-				"<div class='adv-search-selector'>"+
-					"<select type='text' name='rule' entryid="+entryid+" class='form-control input custom' onchange="+onchange_rule+" id='rules_selector_"+entryid+"'>"+
+				"<div class='col-md-4 col-sm-12'>"+
+					"<select type='text' name='rule' entryid="+entryid+" class='form-select py-2' onchange="+onchange_rule+" id='rules_selector_"+entryid+"'>"+
 					str_options+
 					"</select>"+
 				"</div>"+
@@ -2422,19 +2441,24 @@ var htmldom = (function () {
 	/*creates the pages navigator*/
 	function _pages_nav(arr_values, mypage, tot_pages){
 		var str_html = "";
-		var str_start = "<ul class='nav pages-nav'>";
-		if (arr_values[0] > 1) { str_start = str_start + "...";}
-
-		var str_end = "</ul>";
-		if (arr_values[arr_values.length - 1] < tot_pages) { str_end = "..."+ str_end;}
-		for (var i = arr_values.length - 1; i >= 0; i--) {
-			var elem_a = "<li><a class='pages-nav' href='javascript:search.select_page("+String(arr_values[i]-1)+");'>"+ String(arr_values[i])+" " +"</a></li>";
-			if (arr_values[i] == mypage) {
-				elem_a = "<li class='active'><a class='pages-nav' href='javascript:search.select_page("+String(arr_values[i]-1)+");'>"+ String(arr_values[i])+" " +"</a></li>";
-			}
-			str_html = elem_a +" "+ str_html;
+		
+		// Add ellipsis if needed at start
+		if (arr_values[0] > 1) {
+			str_html += "<li class='page-item disabled'><span class='page-link'>...</span></li>";
 		}
-		str_html = str_start + str_html + str_end;
+		
+		// Add page numbers
+		for (var i = 0; i < arr_values.length; i++) {
+			var page_class = arr_values[i] == mypage ? "page-item active" : "page-item";
+			str_html += "<li class='" + page_class + "'><a class='page-link' href='javascript:search.select_page(" + 
+						String(arr_values[i]-1) + ");'>" + String(arr_values[i]) + "</a></li>";
+		}
+		
+		// Add ellipsis if needed at end
+		if (arr_values[arr_values.length - 1] < tot_pages) {
+			str_html += "<li class='page-item disabled'><span class='page-link'>...</span></li>";
+		}
+		
 		return str_html;
 	}
 
@@ -2445,14 +2469,15 @@ var htmldom = (function () {
 			for (var i = 0; i < arr_options.length; i++) {
 				var str_option = "<option>"+String(arr_options[i])+"</option>";
 				if (arr_options[i] == page_limit) {
-					str_option = "<option selected='selected'>"+String(arr_options[i])+"</option>";
+					str_option = "<option selected>"+String(arr_options[i])+"</option>";
 				}
 				options_html= options_html + str_option;
 			}
 
 			var str_html =
-			"<div class='rows-per-page'> Number of rows per page: "+"<select class='form-control input custom' onchange='search.update_page_limit(this.options[selectedIndex].text)'' id='sel1'> </div>"+
-				options_html+"</select>";
+			"<div class='rows-per-page mb-3 col-4'> Rows per page: "+
+            "<select class='form-select mt-2' onchange='search.update_page_limit(this.options[selectedIndex].text)' id='sel1'>"+
+				options_html+"</select></div>";
 
 			rowsxpage_container.innerHTML = str_html;
 			return str_html;
@@ -2464,8 +2489,8 @@ var htmldom = (function () {
 	function tot_results(tot_r) {
 		if (rowsxpage_container != null) {
 			const newDiv = document.createElement('div');
-			newDiv.innerHTML = '<span id="tot_val">'+String(tot_r)+'</span> resources found';
-			newDiv.className = 'tot-results';
+			newDiv.innerHTML = '<span id="tot_val" class="text-primary fw-bold">'+String(tot_r)+'</span> resources found';
+			newDiv.className = 'tot-results mt-2 col-6';
 			rowsxpage_container.appendChild(newDiv);
 			return newDiv;
 		}else {
@@ -2486,7 +2511,7 @@ var htmldom = (function () {
 				if ((arr_options[i].value == def_value)
 					&& (arr_options[i].order == def_order)
 					&& (arr_options[i].type == def_type)) {
-						str_selected = "selected='selected'";
+						str_selected = "selected";
 						default_field = true;
 				}
 				var str_option = "<option "+str_selected+" value="+arr_options[i].value+" type="+arr_options[i].type+" order="+arr_options[i].order+">"+arr_options[i].text+"</option>";
@@ -2495,13 +2520,13 @@ var htmldom = (function () {
 			}
 
 			str_selected = "";
-			if (!default_field) {str_selected = "selected='selected'";}
+			if (!default_field) {str_selected = "selected";}
 			var str_option = "<option "+str_selected+" value='none' type='none' order='none'>"+"None"+"</option>";
 			options_html= options_html + str_option;
 
 			var str_html =
-				"<div class='sort-results'>Sort: <select class='form-control input custom' onchange='search.check_sort_opt(this.options[selectedIndex])' id='sort_box_input'></div>"+
-				options_html+"</select>";
+				"<div class='sort-results mb-3'>Sort by: <select class='form-select mt-2' onchange='search.check_sort_opt(this.options[selectedIndex])' id='sort_box_input'>"+
+				options_html+"</select></div>";
 
 			sort_container.innerHTML = str_html;
 			return str_html;
@@ -2512,16 +2537,20 @@ var htmldom = (function () {
 
 	/*creates the search main-entry (a big searching-box)*/
 	function main_entry(search_base_path){
-		var str_html = "<div class='search-entry'>"+
-											"Search inside the <a href='/'><span class='theme-color'>Open</span><span class='oc-blue'>Citations</span></a> corpus"+
-											"<form class='input-group search-box' action='"+search_base_path+"' method='get'>"+
-											"<input type='text' class='form-control theme-color' placeholder='Search...' name='text'>"+
-												"<div class='input-group-btn'>"+
-												"<button class='btn btn-default theme-color' type='submit'><i class='glyphicon glyphicon-search'></i></button>"+
-												"</div>"+
-											"</form>"+
-										 "</div>";
-
+		var str_html = `
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="search-entry text-center">
+                        <h2>Search inside the <a href='/'><span class='theme-color'>Open</span><span class='oc-blue'>Citations</span></a> corpus</h2>
+                        <form class="input-group search-box" action="${search_base_path}" method="get">
+                            <input type="text" class="form-control theme-color" placeholder="Search..." name="text">
+                            <button class="btn btn-outline-secondary theme-color" type="submit"><i class="fa fa-search"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>`;
 		header_container.innerHTML = str_html;
 		return str_html;
 	}
@@ -2544,7 +2573,7 @@ var htmldom = (function () {
 					new_elem.setAttribute("value",elem_value);
 				}
 				if (elem_class != undefined) {
-					new_elem.setAttribute("class",elem_class);
+					new_elem.setAttribute("class",elem_class.replace('input-group-btn', 'input-group'));
 				}
 				if (elem_innerhtml != undefined) {
 					new_elem.innerHTML = elem_innerhtml;
@@ -2567,27 +2596,41 @@ var htmldom = (function () {
 		var str_options = _build_rules_options(arr_rules, adv_cat_selected);
 
 		var str_html =
-						"<p>"+
-						"<div class='adv-search'>"+
-								"<div class='adv-search-nav'>"+
-									"<ul class='nav pages-nav'>"+
-									str_lis+
-									"</ul>"+
-								"</div>"+
-								"<form action='"+search_base_path+"' method='get'>"+
-									"<div class='adv-search-body'>"+
-										_build_rule_entry(0, arr_rules, adv_cat_selected) +
-										"<p><table id='adv_rules_tab' class='adv-rules-tab'></table></p>"+
-									"</div>"+
-									"<div class='adv-search-footer'>"+
-										"<div class='input-group-btn'>"+
-											"<button class='btn btn-default theme-color' id='advsearch_btn'> <span class='search-btn-text'>"+adv_btn_title+"</span><i class='glyphicon glyphicon-search large-icon'></i></button>"+
-											"<button type='button' class='btn btn-default theme-color' id='add_rule_btn'> <span class='add-btn-text'> Add Rule </span><i class='glyphicon glyphicon-plus normal-icon'></i></button>"+
-										"</div>"+
-									"</div>"+
-								"</form>"+
-						"</div>"+
-						"</p>";
+        `<div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="adv-search">
+                        <div class="adv-search-nav mb-4">
+                            <ul class="nav nav-pills flex-column flex-md-row">
+                                ${str_lis}
+                            </ul>
+                        </div>
+                        <form action="${search_base_path}" method="get">
+                            <div class="adv-search-body">
+                                ${_build_rule_entry(0, arr_rules, adv_cat_selected)}
+                                <div class="table-responsive mt-4">
+                                    <table id="adv_rules_tab" class="table adv-rules-tab">
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="adv-search-footer mt-4">
+                                <div class="d-flex flex-column flex-md-row gap-2">
+                                    <button class="btn btn-primary w-100 w-md-auto mb-2 mb-md-0" id="advsearch_btn" type="submit">
+                                        <i class="fa fa-search me-2"></i>
+                                        <span class="search-btn-text">${adv_btn_title}</span>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary w-100 w-md-auto" id="add_rule_btn">
+                                        <i class="fa fa-plus me-2"></i>
+                                        <span class="add-btn-text">Add Rule</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>`;
 		extra_container.innerHTML = str_html;
 		document.getElementById("add_rule_btn").onclick = function(){htmldom.add_adv_rule(arr_rules, adv_cat_selected)};
 		return str_html;
@@ -2608,8 +2651,8 @@ var htmldom = (function () {
 					is_active = "active";
 				}
 
-				var str_href = "javascript:search.switch_adv_category('"+arr_categories[i].name+"')";
-				str_lis = str_lis + "<li class='"+is_active+"'><a href="+str_href+">"+arr_categories[i].label+"</a></li>"
+				var str_href = `javascript:search.switch_adv_category('${arr_categories[i].name}')`;
+				str_lis = `${str_lis}<li class="nav-item mb-2 mb-md-0 me-md-2"><a class="nav-link ${is_active}" href="${str_href}">${arr_categories[i].label}</a></li>`;
 			}
 			return str_lis;
 		}
@@ -2621,56 +2664,53 @@ var htmldom = (function () {
 
 		id_rows++;
 		var str_html = ''+
-			'<fieldset id="'+id_rows+'">'+
-				'<div class="adv btn-group" data-toggle="buttons">'+
-					'<label class="btn btn-secondary active">'+
-					'<input name="bc_'+id_rows+'" value="and" type="radio" entryid="'+id_rows+'" class="btn btn-default" checked>And'+
-					'</label>'+
-					'<label class="btn btn-secondary" value="or">'+
-					'<input name="bc_'+id_rows+'" value="or" type="radio" entryid="'+id_rows+'" class="btn btn-default">Or'+
-					'</label>'+
-					'<label class="btn btn-secondary" value="and_not">'+
-					'<input name="bc_'+id_rows+'" value="and_not" type="radio" entryid="'+id_rows+'" class="btn btn-default">And Not'+
-					'</label>'+
+			'<fieldset id="'+id_rows+'" class="p-3 mb-3 border rounded">'+
+				'<div class="d-flex flex-column flex-md-row align-items-center gap-3 mb-3">'+
+					'<div class="btn-group w-100 w-md-auto" role="group" aria-label="Logical connectors">'+
+						'<input type="radio" class="btn-check" name="bc_'+id_rows+'" id="and_'+id_rows+'" value="and" entryid="'+id_rows+'" checked autocomplete="off">'+
+						'<label class="btn btn-outline-secondary" for="and_'+id_rows+'">And</label>'+
+						
+						'<input type="radio" class="btn-check" name="bc_'+id_rows+'" id="or_'+id_rows+'" value="or" entryid="'+id_rows+'" autocomplete="off">'+
+						'<label class="btn btn-outline-secondary" for="or_'+id_rows+'">Or</label>'+
+						
+						'<input type="radio" class="btn-check" name="bc_'+id_rows+'" id="and_not_'+id_rows+'" value="and_not" entryid="'+id_rows+'" autocomplete="off">'+
+						'<label class="btn btn-outline-secondary" for="and_not_'+id_rows+'">And Not</label>'+
+					'</div>'+
+					'<div class="ms-auto w-100 w-md-auto text-center text-md-end">'+
+						'<button entryid="'+id_rows+'" class="btn btn-outline-danger" type="button" id="remove_rule_btn_'+id_rows+'" onclick="htmldom.remove_adv_rule('+id_rows+')"><i class="fa fa-minus me-1"></i>Remove</button>'+
+					'</div>'+
 				'</div>'+
-				'<div class="adv btn remove">'+
-				'<button entryid="'+id_rows+'" class="btn btn-default theme-color" id="remove_rule_btn" onclick="htmldom.remove_adv_rule('+id_rows+')" class="remove-rule-btn">Remove <i class="glyphicon glyphicon-minus normal-icon"></i> </button>'+
-				'</div>'+
+				_build_rule_entry(id_rows, arr_rules, adv_cat_selected)+
 			'</fieldset>'+
-			_build_rule_entry(id_rows, arr_rules, adv_cat_selected)+
 			'';
-		var tr_rule = document.createElement("tr");
-		var tabCell = document.createElement("td");
-		tabCell.innerHTML = str_html;
-		tr_rule.appendChild(tabCell);
 		var tr = table.insertRow(-1);
-		tr.innerHTML = tr_rule.outerHTML;
+		var tabCell = tr.insertCell(-1);
+		tabCell.innerHTML = str_html;
 		tr.ruleid = id_rows;
 	}
 
 	/*removes an advanced rule from the table*/
 	function remove_adv_rule(rule_id){
-			var table = document.getElementById("adv_rules_tab");
-			//remove my row and the next one
-			for (var i = 0; i < table.rows.length; i++) {
-				   //iterate through rows
-					 if (table.rows[i].ruleid == rule_id) {
-						 table.deleteRow(i);
-						 break;
-					 }
+		var table = document.getElementById("adv_rules_tab");
+		//remove my row and the next one
+		for (var i = 0; i < table.rows.length; i++) {
+			//iterate through rows
+			if (table.rows[i].ruleid == rule_id) {
+				table.deleteRow(i);
+				break;
 			}
-	 }
+		}
+	}
 
 	 /*creates the container of the buttons: All, Show-only, Exclude */
 	function filter_btns(){
 		if (filter_btns_container != null) {
-			var str_html =
-				"<div class='btn-group filters-btns' id='filters_btns' active='false' role='group'>"+
-				"<button type='button' class='btn btn-primary' id='all' onclick='search.show_all();'>All</button>"+
-				"<button type='button' class='btn btn-primary' id='show-only' onclick='search.show_or_exclude("+true+");' disabled>Show only</button>"+
-				"<button type='button' class='btn btn-primary' id='exclude' onclick='search.show_or_exclude("+false+");' disabled>Exclude</button>"+
-				"</div>"
-				;
+			var str_html = `
+            <div class="d-flex flex-column flex-md-row filters-btns" id="filters_btns" role="group" aria-label="Filter buttons">
+                <button type="button" class="btn btn-primary mb-2 mb-md-0 me-0 me-md-2" id="all" onclick="search.show_all();">All</button>
+                <button type="button" class="btn btn-primary mb-2 mb-md-0 me-0 me-md-2" id="show-only" onclick="search.show_or_exclude(true);" disabled>Show only</button>
+                <button type="button" class="btn btn-primary" id="exclude" onclick="search.show_or_exclude(false);" disabled>Exclude</button>
+            </div>`;
 			filter_btns_container.innerHTML = str_html;
 			return str_html;
 		}else {
@@ -2682,7 +2722,7 @@ var htmldom = (function () {
 	function filter_history_tab(){
 		var new_tab = document.createElement('table');
 		new_tab.setAttribute("id", 'filter_history_tab');
-		new_tab.setAttribute("class", 'filter-history-tab');
+		new_tab.setAttribute("class", 'filter-history-tab table table-sm mt-3');
 		var new_p = document.createElement('p');
 		new_p.innerHTML = new_tab.outerHTML;
 
@@ -2733,18 +2773,17 @@ var htmldom = (function () {
 	/*creates the results limit filter*/
 	function limit_filter(init_val, tot_res, slider_min, slider_max){
 		if (limitres_container != null) {
-			str_html =
-			"<div class='limit-results'>"+
-			"Limit to <myrange class='limit-results-value' id='lbl_range' for='final_text'> "+String(init_val)+"</myrange>/"+String(tot_res)+" results"+
-			"</div>"+
-			"<div class='slider-container'>"+
-			"<input type='range' min="+String(slider_min)+" max="+String(slider_max)+" value="+String(init_val)+" class='slider' oninput='lbl_range.innerHTML=this.value; search.update_res_limit(this.value);' id='myRange'>"+
-			"</div>"+
-			"<div class='slider-footer'>"+
-			"<div class='left'>&#60; Fewer</div><div class='right'>More &#62;</div>"+
-			"</div>";
-
-			//str_html = "<div class='tot-results'><span id='lbl_range'> "+String(init_val)+"</span> resources found"+"</div>";
+			var str_html = `
+            <div class="limit-results mb-3">
+                Limit to <span class="limit-results-value fw-bold" id="lbl_range">${init_val}</span>/${tot_res} results
+            </div>
+            <div class="slider-container mb-2">
+                <input type="range" min="${slider_min}" max="${slider_max}" value="${init_val}" class="form-range" oninput="lbl_range.innerHTML=this.value; search.update_res_limit(this.value);" id="myRange">
+            </div>
+            <div class="slider-footer d-flex justify-content-between mb-3">
+                <div class="left text-secondary">&#60; Fewer</div>
+                <div class="right text-secondary">More &#62;</div>
+            </div>`;
 			limitres_container.innerHTML = str_html;
 			return str_html;
 		}else {
@@ -2764,7 +2803,7 @@ var htmldom = (function () {
 			for (var i = 0; i < myfields.length; i++) {
 
 						var divtab = __create_inner_tab_container(myfields[i].value)
-						var table = divtab.firstChild;
+						var table = divtab.firstChild.firstChild; // Get through the responsive wrapper
 
 						//insert the header
 						var tr = table.insertRow(-1);
@@ -2788,10 +2827,10 @@ var htmldom = (function () {
 
 									for (var j = j_from; j < j_to; j++) {
 										//insert a checkbox entry
-										tr = inner_divtab.firstChild.insertRow(-1);
+										tr = inner_divtab.firstChild.firstChild.insertRow(-1);
 										tr.innerHTML = _checkbox_value(myfields[i],arr_check_values[j]).outerHTML;
 									}
-									tr = inner_divtab.firstChild.insertRow(-1);
+									tr = inner_divtab.firstChild.firstChild.insertRow(-1);
 									tr.innerHTML = _filter_vals_pages_nav(j_from,j_to,arr_check_values.length,myfields[i]).outerHTML;
 
 									tab_arr.push(divtab);
@@ -2810,9 +2849,10 @@ var htmldom = (function () {
 				for (var i = 0; i < tab_arr.length; i++) {
 					filter_values_container.appendChild(tab_arr[i]);
 				}
-				//filter_values_container.appendChild(table);
 
 				__update_checkboxes();
+				// Call touch-friendly function after building
+				initTouchFriendlyControls();
 
 				//click and check the enabled checkboxes
 				function __update_checkboxes() {
@@ -2825,22 +2865,52 @@ var htmldom = (function () {
 							for (var j = 0; j < j_to; j++) {
 								var dom_id = arr_check_values[j].field+"-"+arr_check_values[j].value;
 								if (arr_check_values[j].checked == true) {
-									document.getElementById(dom_id).click();
+									var checkbox = document.getElementById(dom_id);
+									if (checkbox && !checkbox.checked) {
+										checkbox.checked = true;
+									}
 								}
 							}
 						}
 					}
 				}
 				function __create_inner_tab_container(class_val){
-					// create dynamic table
+					// Create responsive wrapper first
+					var responsiveWrapper = document.createElement("div");
+					responsiveWrapper.className = "table-responsive";
+					
+					// Create dynamic table
 					var table = document.createElement("table");
-					table.className = "table filter-values-tab";
-
+					table.className = "table filter-values-tab mb-3";
+					
+					responsiveWrapper.appendChild(table);
+					
 					var divtab = document.createElement("div");
 					divtab.className = class_val;
-					divtab.appendChild(table);
+					divtab.appendChild(responsiveWrapper);
 					return divtab;
 				}
+		}
+	}
+
+	// Add function for touch-friendly controls
+	function initTouchFriendlyControls() {
+		// Make dropdowns easier to tap
+		var dropdowns = document.querySelectorAll('.form-select');
+		for (var i = 0; i < dropdowns.length; i++) {
+			dropdowns[i].classList.add('py-2'); // Add more padding
+		}
+		
+		// Improve checkbox tap targets
+		var checkboxes = document.querySelectorAll('.form-check');
+		for (var i = 0; i < checkboxes.length; i++) {
+			checkboxes[i].classList.add('py-1', 'my-1'); // Add more vertical space
+		}
+		
+		// Increase touch targets for pagination links
+		var paginationLinks = document.querySelectorAll('.pagination .page-link');
+		for (var i = 0; i < paginationLinks.length; i++) {
+			paginationLinks[i].classList.add('px-3', 'py-2'); // Add more padding
 		}
 	}
 
@@ -2855,7 +2925,7 @@ var htmldom = (function () {
 				var abort_obj = progress_loader.abort;
 				var str_html_abort = "";
 				if (abort_obj != undefined) {
-  				str_html_abort = "<p><div id='abort_search' class='abort-search'><a href="+abort_obj.href_link+" class='allert-a'>"+abort_obj.title+"</a></div></p>";
+  				str_html_abort = "<p><div id='abort_search' class='abort-search'><a href="+abort_obj.href_link+" class='allert-a btn btn-sm btn-outline-danger'>"+abort_obj.title+"</a></div></p>";
 				}
 
 				var title_obj = progress_loader.title;
@@ -2873,10 +2943,15 @@ var htmldom = (function () {
 				var spinner_obj = progress_loader.spinner;
 				var str_html_spinner = "";
 				if ((spinner_obj != undefined) && (spinner_obj == true)){
-					str_html_spinner = "<p><div class='searchloader loader-spinner'></div></p>";
+					str_html_spinner = "<p><div class='searchloader spinner-border' role='status'><span class='visually-hidden'>Loading...</span></div></p>";
 				}
 
-				var str_html = str_html_title + str_html_subtitle + str_html_spinner + str_html_abort;
+				var str_html = `<div class="text-center p-4">
+					${str_html_title}
+					${str_html_subtitle}
+					${str_html_spinner}
+					${str_html_abort}
+				</div>`;
 				parser = new DOMParser()
 	  		//var dom = parser.parseFromString(str_html, "text/xml").firstChild;
 				//header_container.appendChild(dom);
@@ -2899,8 +2974,17 @@ var htmldom = (function () {
 
 				var new_arr_tab = __build_page(table_conf);
 				results_container.innerHTML = "";
-				results_container.appendChild(new_arr_tab[0]);
+				// Wrap the table in a responsive container
+				var responsiveWrapper = document.createElement("div");
+				responsiveWrapper.className = "table-responsive";
+				responsiveWrapper.appendChild(new_arr_tab[0]);
+				
+				// Add the table and footer to the results container
+				results_container.appendChild(responsiveWrapper);
 				results_container.appendChild(new_arr_tab[1]);
+				
+				// Initialize touch-friendly controls
+				initTouchFriendlyControls();
 
 				function __build_page(){
 					// create new tables
@@ -2908,7 +2992,7 @@ var htmldom = (function () {
 					var new_footer_tab = document.createElement("table");
 
 					new_tab_res.id = "tab_res";
-					new_tab_res.className = "table results-tab";
+					new_tab_res.className = "table table-striped results-tab";
 
 					//create table header
 					var col = table_conf.view.data["head"]["vars"];
@@ -2934,7 +3018,7 @@ var htmldom = (function () {
 						new_footer_tab = _table_footer(false, __init_prev_next_btn());
 					}else {
 						//i have no results
-						new_footer_tab = _table_footer(true, "No results were found");
+						new_footer_tab = _table_footer(true, `<div class="alert alert-info py-4">No results were found</div>`);
 					}
 
 					return [new_tab_res,new_footer_tab];
@@ -3062,15 +3146,18 @@ var htmldom = (function () {
 			if (export_container.firstChild != null) {
 				return 1;
 			}
+			var linkContainer = document.createElement("div");
+			linkContainer.className = "export-results mb-3";
+			
 			var link = document.createElement("a");
 			link.id = "export_a";
-			link.className = "search-a export-results";
-			link.innerHTML = "Export results";
+			link.className = "btn btn-outline-primary btn-sm";
+			link.innerHTML = '<i class="fa fa-download me-1"></i> Export results';
 			link.setAttribute("href", "javascript:search.export_results();");
-
-			export_container.appendChild(link);
+			
+			linkContainer.appendChild(link);
+			export_container.appendChild(linkContainer);
 			return 1;
-			//header_container.appendChild(link);
 		}
 	}
 
@@ -3133,6 +3220,7 @@ var htmldom = (function () {
 		remove_adv_rule: remove_adv_rule,
 		reset_html_structure:reset_html_structure,
 		download_results: download_results,
-		adv_placeholder: adv_placeholder
+		adv_placeholder: adv_placeholder,
+		initTouchFriendlyControls: initTouchFriendlyControls
 	}
 })();

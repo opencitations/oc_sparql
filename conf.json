@@ -8,6 +8,8 @@
   "sync": {
     "folders": [
         "static/css",
+        "static/js",
+        "static/img",
         "html-template/common"
     ],
     "files": [

@@ -1,5 +1,10 @@
+const endpoint_meta = window.endpointConfig?.meta || "http://virtuoso-service.default.svc.cluster.local:8890/sparql"
+const endpoint_index = window.endpointConfig?.index || "http://qlever-service.default.svc.cluster.local:7011"
+
+
+
 var search_conf = {
-"sparql_endpoint": "https://opencitations.net/index/sparql",
+"sparql_endpoint": "https://search.opencitations.net/sparql/meta",
 "prefixes": [
     {"prefix":"cito","iri":"http://purl.org/spar/cito/"},
     {"prefix":"literal","iri":"http://www.essepuntato.it/2010/06/literalreification/"},
@@ -10,6 +15,24 @@ var search_conf = {
   ],
 
 "rules":  [
+    /*{
+      "name":"citedomid",
+      "label": "Citations of a bibliographic resource (OMID)",
+      "placeholder": "e.g. br/0612058700",
+      "advanced": true,
+      "freetext": true,
+      "category": "citation",
+      "regex":"(.+)",
+      "query": [`
+            {
+              SERVICE <https://test.opencitations.net/index/sparql> {
+                    BIND(<https://w3id.org/oc/meta/[[VAR]]> as ?cited) .
+                    ?oci cito:hasCitedEntity ?cited .
+                    ?oci cito:hasCitingEntity ?citing .
+              }
+            }`
+      ]
+    },*/
     {
       "name":"citingdoi",
       "label": "References of a bibliographic resource (DOI, PMID, OMID)",
@@ -21,12 +44,13 @@ var search_conf = {
       "regex":"(.+)",
       "query": [`
             {
-              SERVICE <https://test.opencitations.net/meta/sparql> {
-                ?citing datacite:hasIdentifier ?identifier .
                 ?identifier literal:hasLiteralValue "[[VAR]]" .
-              }
-              ?oci cito:hasCitingEntity ?citing .
-              ?oci cito:hasCitedEntity ?cited .
+                ?citing datacite:hasIdentifier ?identifier .
+                SERVICE <${endpoint_index}/sparql> {
+                      ?oci a cito:Citation .
+                      ?oci cito:hasCitingEntity ?citing .
+                      ?oci cito:hasCitedEntity ?cited .
+                }
             }`
       ]
     },
@@ -41,12 +65,13 @@ var search_conf = {
       "regex":"(.+)",
       "query": [`
             {
-              SERVICE <https://test.opencitations.net/meta/sparql> {
-                ?cited datacite:hasIdentifier ?identifier .
                 ?identifier literal:hasLiteralValue "[[VAR]]" .
-              }
-              ?oci cito:hasCitedEntity ?cited .
-              ?oci cito:hasCitingEntity ?citing .
+                ?cited datacite:hasIdentifier ?identifier .
+                SERVICE <${endpoint_index}/sparql> {
+                      ?oci a cito:Citation .
+                      ?oci cito:hasCitedEntity ?cited .
+                      ?oci cito:hasCitingEntity ?citing .
+                }
             }`
       ]
     },
@@ -60,9 +85,11 @@ var search_conf = {
       "regex":"(\\d{1,}-\\d{1,})",
       "query": [`
         {
-          BIND(<https://w3id.org/oc/index/ci/[[VAR]]> as ?oci) .
+        BIND(<https://w3id.org/oc/index/ci/[[VAR]]> as ?oci) .
+        SERVICE <${endpoint_index}/sparql> {
           ?oci cito:hasCitingEntity ?citing .
           ?oci cito:hasCitedEntity ?cited .
+        }
         }
         `
       ]
@@ -91,7 +118,7 @@ var search_conf = {
         "cited_ref": {"name": "meta_call_to_get_ref", "param": {"fields":["cited"]}, "async": true}
       },
       "extra_elems":[
-        {"elem_type": "a","elem_value": "Back to search" ,"elem_class": "btn btn-primary left" ,"elem_innerhtml": "Show the search interface", "others": {"href": "/index/search"}}
+        {"elem_type": "a","elem_value": "Back to search" ,"elem_class": "btn btn-primary left" ,"elem_innerhtml": "Show the search interface", "others": {"href": "/"}}
       ]
     }
   ],
@@ -108,12 +135,12 @@ var search_conf = {
             "spinner": true,
             "title":"Searching in the OpenCitations Indexes ...",
             "subtitle":"Be patient - this search might take several seconds!",
-            "abort":{"title":"Abort Search","href_link":"/index/search"}
+            "abort":{"title":"Abort Search","href_link":"/"}
           },
 
    "timeout":{
             "value": 9000,
-            "link": "/index/search"
+            "link": "/"
           }
 
   }
@@ -262,7 +289,7 @@ var heuristics = (function () {
         else {
           id_pref = "";
         }
-        var meta_api_url = 'https://opencitations.net/meta/api/v1/metadata/';
+        var meta_api_url = 'https://k8s.opencitations.net/meta/api/v1/metadata/';
         meta_api_url = meta_api_url + id_pref + str_id;
 
         fetch(meta_api_url)
@@ -349,7 +376,7 @@ var callbackfunctions = (function () {
 
     function meta_call_to_get_ref(conf_params, index, async_bool, callbk_func, key_full_name, data_field, func_name ){
 
-      var call_meta = "https://test.opencitations.net/meta/api/v1/metadata/";
+      var call_meta = "https://k8s.opencitations.net/meta/api/v1/metadata/";
       // takes an omid url, e.g. "https://w3id.org/oc/meta/br/0610200888"
       var str_id = conf_params[0];
       var link_id = str_id;
