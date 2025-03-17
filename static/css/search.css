@@ -209,7 +209,7 @@ spanfooter + spanfooter {
 
 select {
   text-indent: 0%;
-  margin: 5px;
+  /* margin: 5px; */
 }
 
 select.custom {
