@@ -106,7 +106,7 @@ FROM python:3.11-slim
 # Define environment variables with default values
 # These can be overridden during container runtime
 ENV BASE_URL="sparql.opencitations.net" \
-    LOG_DIR="/mnt/log_dir/oc_download"  \
+    LOG_DIR="/mnt/log_dir/oc_sparql"  \
     SPARQL_ENDPOINT_INDEX="http://qlever-service.default.svc.cluster.local:7011" \
     SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
     SYNC_ENABLED="true"
