@@ -23,7 +23,8 @@ The service provides two main SPARQL endpoints:
 
 The service requires the following environment variables. These values take precedence over the ones defined in `conf.json`:
 
-- `SPARQL_BASE_URL`: Base URL for the SPARQL endpoint
+- `BASE_URL`: Base URL for the SPARQL endpoint
+- `LOG_DIR`: Directory path where log files will be stored
 - `SPARQL_ENDPOINT_INDEX`: URL for the index SPARQL endpoint
 - `SPARQL_ENDPOINT_META`: URL for the meta SPARQL endpoint
 - `SYNC_ENABLED`: Enable/disable static files synchronization (default: false)
@@ -31,7 +32,8 @@ The service requires the following environment variables. These values take prec
 For instance:
 
 ```env
-SPARQL_BASE_URL=sparql.opencitations.net
+BASE_URL=sparql.opencitations.net
+LOG_DIR=/home/dir/log/
 SPARQL_ENDPOINT_INDEX=http://qlever-service.default.svc.cluster.local:7011  
 SPARQL_ENDPOINT_META=http://virtuoso-service.default.svc.cluster.local:8890/sparql
 SYNC_ENABLED=true
@@ -103,7 +105,8 @@ FROM python:3.11-slim
 
 # Define environment variables with default values
 # These can be overridden during container runtime
-ENV SPARQL_BASE_URL="sparql.opencitations.net" \
+ENV BASE_URL="sparql.opencitations.net" \
+    LOG_DIR="/mnt/log_dir/oc_download"  \
     SPARQL_ENDPOINT_INDEX="http://qlever-service.default.svc.cluster.local:7011" \
     SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
     SYNC_ENABLED="true"
@@ -115,8 +118,7 @@ RUN apt-get update && \
     git \
     python3-dev \
     build-essential && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean
 
 # Set the working directory for our application
 WORKDIR /website
