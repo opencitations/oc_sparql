@@ -34,12 +34,12 @@ for (var i = 0; i < oscar_tags.length; i++) {
 //Build all the inner elements
 for (var i = 0; i < oscar_doms.length; i++) {
 
-	var str_html_inner = '<div id="search_extra" class="search-extra"></div>';
+	var str_html_inner = '<div id="search_extra" class="search-extra row mx-auto col-10 col-md-11"></div>';
 	//OSCAR view section
 	if (oscar_doms[i]["data-view"].length != 0) {
-		str_html_inner = str_html_inner + '<div id="search_header" class="search-header row gy-3 justify-content-end">';
+		str_html_inner = str_html_inner + '<div id="search_header" class="search-header row mx-auto col-10 col-md-11">';
 		for (var j = 0; j < data_view.length; j++) {
-			str_html_inner = str_html_inner + '<div id='+data_view[j]+' class="col-12 col-md-4 row"></div>';
+			str_html_inner = str_html_inner + '<div id='+data_view[j]+' class="col-12 col-md-6 row"></div>';
 		}
 		str_html_inner = str_html_inner + '</div>';
 	}
@@ -65,7 +65,7 @@ for (var i = 0; i < oscar_doms.length; i++) {
 	}
 
 	//always put the table of results
-	str_html_inner = str_html_inner + '<div id="search_results" class="search-results mx-auto col-10 col-md-12"></div></div>';
+	str_html_inner = str_html_inner + '<div id="search_results" class="search-results mx-auto col-10 col-md-11"></div></div>';
 
 	//put it inside the page
 	oscar_doms[i]['container'].innerHTML = '<div id="search" class="search mx-auto">'+ str_html_inner + '</div>';
@@ -417,20 +417,20 @@ var search = (function () {
 			// Progressive timeout: 2s for first try, 10s for retry
 			const timeouts = [2000, 5000, 20000];
 			const currentTimeout = attempt < timeouts.length ? timeouts[attempt] : timeouts[timeouts.length - 1];
-			
+
 			console.log(`Attempt ${attempt + 1} with timeout ${currentTimeout}ms`);
-			
+
 			//use this url to contact the sparql_endpoint triple store
 			var query_contact_tp = String(search_conf_json.sparql_endpoint) + "?query=" + encodeURIComponent(sparql_query) + "&format=json";
-		
+
 			//reset all doms
 			htmldom.reset_html_structure();
-		
+
 			//put a loader div
 			if (util.get_obj_key_val(search_conf_json, "progress_loader.visible") == true) {
 				htmldom.loader(true, search_conf_json["progress_loader"], query_label);
 			}
-		
+
 			//call the sparql end point and retrieve results in json format
 			$.ajax({
 				dataType: "json",
@@ -441,7 +441,7 @@ var search = (function () {
 				error: function(jqXHR, textStatus, errorThrown) {
 					if (textStatus === "timeout") {
 						console.log(`Timeout on attempt ${attempt + 1}`);
-						
+
 						if (attempt < timeouts.length - 1) {
 							// Retry with longer timeout
 							console.log(`Retrying with longer timeout...`);
@@ -475,12 +475,12 @@ var search = (function () {
 							htmldom.loader(false, search_conf_json["progress_loader"]);
 						}
 					}
-		
+
 					if ((rule_index >= rules.length -1) || (res_data.results.bindings.length > 0)) {
 						sparql_results = res_data;
 						//I have only 1 rule
 						cat_conf = rule_category;
-		
+
 						//in this case don't build the table directly
 						if (callbk_fun != null) {
 						 //look at the rule name
@@ -488,7 +488,7 @@ var search = (function () {
 					 }else {
 						 build_table(res_data);
 					 }
-		
+
 					}else {
 							var sparql_query = _build_sparql_query(rules[rule_index+1], query_text);
 							if(sparql_query != -1){
@@ -2290,18 +2290,18 @@ var htmldom = (function () {
 		var paginationHtml = `
 		<nav aria-label="Page navigation">
 			<ul class="pagination pagination-sm flex-wrap justify-content-center">
-				${mypage > 0 ? 
+				${mypage > 0 ?
 					`<li class="page-item">
 						<a class="page-link" href="javascript:search.prev_page();" aria-label="Previous">
 							<span aria-hidden="true">&laquo;</span>
 						</a>
 					</li>` : ''
 				}
-				
+
 				<!-- Page numbers -->
 				${_pages_nav(arr_values, mypage + 1, tot_pages)}
-				
-				${(tot_res - ((mypage + 1) * pages_lim)) > 0 ? 
+
+				${(tot_res - ((mypage + 1) * pages_lim)) > 0 ?
 					`<li class="page-item">
 						<a class="page-link" href="javascript:search.next_page();" aria-label="Next">
 							<span aria-hidden="true">&raquo;</span>
@@ -2310,14 +2310,14 @@ var htmldom = (function () {
 				}
 			</ul>
 		</nav>`;
-		
+
 		var new_tr = document.createElement("tr");
 		var navCell = document.createElement("td");
 		navCell.colSpan = "100%";
 		navCell.className = "text-center";
 		navCell.innerHTML = paginationHtml;
 		new_tr.appendChild(navCell);
-		
+
 		return new_tr;
 	}
 	/*create a checbox-field-value entry*/
@@ -2441,24 +2441,24 @@ var htmldom = (function () {
 	/*creates the pages navigator*/
 	function _pages_nav(arr_values, mypage, tot_pages){
 		var str_html = "";
-		
+
 		// Add ellipsis if needed at start
 		if (arr_values[0] > 1) {
 			str_html += "<li class='page-item disabled'><span class='page-link'>...</span></li>";
 		}
-		
+
 		// Add page numbers
 		for (var i = 0; i < arr_values.length; i++) {
 			var page_class = arr_values[i] == mypage ? "page-item active" : "page-item";
-			str_html += "<li class='" + page_class + "'><a class='page-link' href='javascript:search.select_page(" + 
+			str_html += "<li class='" + page_class + "'><a class='page-link' href='javascript:search.select_page(" +
 						String(arr_values[i]-1) + ");'>" + String(arr_values[i]) + "</a></li>";
 		}
-		
+
 		// Add ellipsis if needed at end
 		if (arr_values[arr_values.length - 1] < tot_pages) {
 			str_html += "<li class='page-item disabled'><span class='page-link'>...</span></li>";
 		}
-		
+
 		return str_html;
 	}
 
@@ -2475,9 +2475,9 @@ var htmldom = (function () {
 			}
 
 			var str_html =
-			"<div class='rows-per-page mb-3 col-4'> Rows per page: "+
-            "<select class='form-select mt-2' onchange='search.update_page_limit(this.options[selectedIndex].text)' id='sel1'>"+
-				options_html+"</select></div>";
+			"<div class='rows-per-page mb-3 col d-flex align-items-center'><span class='me-2' style='white-space: nowrap;'>Rows per page:</span>"+
+            "<select class='form-select' onchange='search.update_page_limit(this.options[selectedIndex].text)' id='sel1'>"+
+				options_html+"</select></span></div>";
 
 			rowsxpage_container.innerHTML = str_html;
 			return str_html;
@@ -2489,8 +2489,8 @@ var htmldom = (function () {
 	function tot_results(tot_r) {
 		if (rowsxpage_container != null) {
 			const newDiv = document.createElement('div');
-			newDiv.innerHTML = '<span id="tot_val" class="text-primary fw-bold">'+String(tot_r)+'</span> resources found';
-			newDiv.className = 'tot-results mt-2 col-6';
+			newDiv.innerHTML = '<span id="tot_val" class="text-primary fw-bold">'+String(tot_r)+'</span><span style="margin-left:10px">resources found</span>';
+			newDiv.className = 'tot-results mb-3 col d-flex align-items-center';
 			rowsxpage_container.appendChild(newDiv);
 			return newDiv;
 		}else {
@@ -2542,9 +2542,21 @@ var htmldom = (function () {
             <div class="row">
                 <div class="col-12">
                     <div class="search-entry text-center">
-                        <h2>Search inside the <a href='/'><span class='theme-color'>Open</span><span class='oc-blue'>Citations</span></a> corpus</h2>
+											<div class="container">
+												<div class="text-center my-5 animate__animated animate__fadeIn">
+													<img src="../static/img/oc-medium.png" alt="Logo" class="img-fluid mb-4" style="max-height: 150px" />
+													<!--<h2>Search <span class='theme-color'>Open</span><span class='oc-blue'>Citations</span></h2>-->
+												</div>
+
                         <form class="input-group search-box" action="${search_base_path}" method="get">
-                            <input type="text" class="form-control theme-color" placeholder="Search..." name="text">
+                            <input type="text" class="form-control theme-color" placeholder="Search DOI, PMID, or OMID ... e.g., 10.1016/J.WEBSEM.2012.08.001" name="text">
+
+														<!-- Dropdown menu -->
+												    <select class="form-select" name="rule" style="max-width: 150px;">
+																<option value="citeddoi">Citations</option>
+																<option value="citingdoi">References</option>
+												    </select>
+
                             <button class="btn btn-outline-secondary theme-color" type="submit"><i class="fa fa-search"></i></button>
                         </form>
                     </div>
@@ -2669,10 +2681,10 @@ var htmldom = (function () {
 					'<div class="btn-group w-100 w-md-auto" role="group" aria-label="Logical connectors">'+
 						'<input type="radio" class="btn-check" name="bc_'+id_rows+'" id="and_'+id_rows+'" value="and" entryid="'+id_rows+'" checked autocomplete="off">'+
 						'<label class="btn btn-outline-secondary" for="and_'+id_rows+'">And</label>'+
-						
+
 						'<input type="radio" class="btn-check" name="bc_'+id_rows+'" id="or_'+id_rows+'" value="or" entryid="'+id_rows+'" autocomplete="off">'+
 						'<label class="btn btn-outline-secondary" for="or_'+id_rows+'">Or</label>'+
-						
+
 						'<input type="radio" class="btn-check" name="bc_'+id_rows+'" id="and_not_'+id_rows+'" value="and_not" entryid="'+id_rows+'" autocomplete="off">'+
 						'<label class="btn btn-outline-secondary" for="and_not_'+id_rows+'">And Not</label>'+
 					'</div>'+
@@ -2878,13 +2890,13 @@ var htmldom = (function () {
 					// Create responsive wrapper first
 					var responsiveWrapper = document.createElement("div");
 					responsiveWrapper.className = "table-responsive";
-					
+
 					// Create dynamic table
 					var table = document.createElement("table");
 					table.className = "table filter-values-tab mb-3";
-					
+
 					responsiveWrapper.appendChild(table);
-					
+
 					var divtab = document.createElement("div");
 					divtab.className = class_val;
 					divtab.appendChild(responsiveWrapper);
@@ -2900,13 +2912,13 @@ var htmldom = (function () {
 		for (var i = 0; i < dropdowns.length; i++) {
 			dropdowns[i].classList.add('py-2'); // Add more padding
 		}
-		
+
 		// Improve checkbox tap targets
 		var checkboxes = document.querySelectorAll('.form-check');
 		for (var i = 0; i < checkboxes.length; i++) {
 			checkboxes[i].classList.add('py-1', 'my-1'); // Add more vertical space
 		}
-		
+
 		// Increase touch targets for pagination links
 		var paginationLinks = document.querySelectorAll('.pagination .page-link');
 		for (var i = 0; i < paginationLinks.length; i++) {
@@ -2978,11 +2990,11 @@ var htmldom = (function () {
 				var responsiveWrapper = document.createElement("div");
 				responsiveWrapper.className = "table-responsive";
 				responsiveWrapper.appendChild(new_arr_tab[0]);
-				
+
 				// Add the table and footer to the results container
 				results_container.appendChild(responsiveWrapper);
 				results_container.appendChild(new_arr_tab[1]);
-				
+
 				// Initialize touch-friendly controls
 				initTouchFriendlyControls();
 
@@ -3148,13 +3160,13 @@ var htmldom = (function () {
 			}
 			var linkContainer = document.createElement("div");
 			linkContainer.className = "export-results mb-3";
-			
+
 			var link = document.createElement("a");
 			link.id = "export_a";
 			link.className = "btn btn-outline-primary btn-sm";
 			link.innerHTML = '<i class="fa fa-download me-1"></i> Export results';
 			link.setAttribute("href", "javascript:search.export_results();");
-			
+
 			linkContainer.appendChild(link);
 			export_container.appendChild(linkContainer);
 			return 1;
