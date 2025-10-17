@@ -73,6 +73,10 @@ When static sync is enabled (via `--sync-static` or `SYNC_ENABLED=true`), the ap
 
 ## Running Options
 
+### Local Development
+
+For local development and testing, the application uses the built-in web.py HTTP server.
+
 The application supports the following command line arguments:
 
 - `--sync-static`: Synchronize static files at startup and enable periodic sync (every 30 minutes)
@@ -95,6 +99,22 @@ python3 sparql_oc.py --sync-static --port 8085
 
 The Docker container is configured to run with `--sync-static` enabled by default.
 
+### Production Deployment (Docker)
+
+When running in Docker/Kubernetes, the application uses **Gunicorn** as the WSGI HTTP server for better performance and concurrency handling:
+
+- **Server**: Gunicorn with gevent workers
+- **Workers**: 2 concurrent worker processes
+- **Worker Type**: gevent (async) for handling thousands of simultaneous requests
+- **Timeout**: 1200 seconds (to handle long-running SPARQL queries)
+- **Connections per worker**: 800 simultaneous connections
+
+The Docker container automatically uses Gunicorn and is configured with static sync enabled by default.
+
+> **Note**: The application code automatically detects the execution environment. When run with `python3 sparql_oc.py`, it uses the built-in web.py server. When run with Gunicorn (as in Docker), it uses the WSGI interface.
+
+You can customize the Gunicorn server configuration by modifying the `gunicorn.conf.py` file.
+
 ### Dockerfile
 
 You can change these variables in the Dockerfile:
@@ -111,14 +131,15 @@ ENV BASE_URL="sparql.opencitations.net" \
     SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
     SYNC_ENABLED="true"
 
+
+# Ensure Python output is unbuffered
+ENV PYTHONUNBUFFERED=1
 # Install system dependencies required for Python package compilation
-# We clean up apt cache after installation to reduce image size
 RUN apt-get update && \
     apt-get install -y \
     git \
     python3-dev \
-    build-essential && \
-    apt-get clean
+    build-essential
 
 # Set the working directory for our application
 WORKDIR /website
@@ -133,6 +154,5 @@ RUN pip install -r requirements.txt
 # Expose the port that our service will listen on
 EXPOSE 8080
 
-# Start the application
-# The Python script will now read environment variables for SPARQL configurations
-CMD ["python3", "sparql_oc.py"]
+# Start the application with gunicorn for production
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "sparql_oc:application"]

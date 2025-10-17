@@ -45,6 +45,7 @@ active = {
 # URL Mapping
 urls = (
     "/", "Main",
+    "/static/(.*)", "Static",
     "/meta", "SparqlMeta",
     '/favicon.ico', 'Favicon',
     "/index", "SparqlIndex"
@@ -73,6 +74,9 @@ render = web.template.render(c["html"], globals={
 
 # App Web.py
 app = web.application(urls, globals())
+
+# WSGI application
+application = app.wsgifunc()
 
 def sync_static_files():
     """
@@ -219,9 +223,39 @@ class SparqlMeta(Sparql):
     def __init__(self):
         Sparql.__init__(self, env_config["sparql_endpoint_meta"],
                        "meta", "/meta")
+        
+class Static:
+    def GET(self, name):
+        """Serve static files"""
+        static_dir = "static"
+        file_path = os.path.join(static_dir, name)
+
+        if not os.path.exists(file_path):
+            raise web.notfound()
+
+        # Content types
+        ext = os.path.splitext(name)[1]
+        content_types = {
+            '.css': 'text/css',
+            '.js': 'application/javascript',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.gif': 'image/gif',
+            '.svg': 'image/svg+xml',
+            '.ico': 'image/x-icon',
+            '.woff': 'font/woff',
+            '.woff2': 'font/woff2',
+            '.ttf': 'font/ttf',
+        }
+
+        web.header('Content-Type', content_types.get(ext, 'application/octet-stream'))
+
+        with open(file_path, 'rb') as f:
+            return f.read()
 
 
-# Run the application
+# Run the application on localhost for testing/development
 if __name__ == "__main__":
     # Add startup log
     print("Starting SPARQL OpenCitations web application...")

@@ -9,14 +9,14 @@ ENV BASE_URL="sparql.opencitations.net" \
     SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
     SYNC_ENABLED="true"
 
+# Ensure Python output is unbuffered
+ENV PYTHONUNBUFFERED=1
 # Install system dependencies required for Python package compilation
-# We clean up apt cache after installation to reduce image size
 RUN apt-get update && \
     apt-get install -y \
     git \
     python3-dev \
-    build-essential && \
-    apt-get clean
+    build-essential
 
 # Set the working directory for our application
 WORKDIR /website
@@ -31,6 +31,5 @@ RUN pip install -r requirements.txt
 # Expose the port that our service will listen on
 EXPOSE 8080
 
-# Start the application
-# The Python script will now read environment variables for SPARQL configurations
-CMD ["python3", "sparql_oc.py"]
+# Start the application with gunicorn instead of python directly
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "sparql_oc:application"]

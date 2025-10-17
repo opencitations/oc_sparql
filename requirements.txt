@@ -39,3 +39,6 @@ web.py
 SPARQLWrapper
 gitpython
 APScheduler==3.10.1
+gunicorn>=22.0.0
+gevent
+zope.event
