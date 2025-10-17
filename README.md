@@ -113,6 +113,8 @@ The Docker container automatically uses Gunicorn and is configured with static s
 
 > **Note**: The application code automatically detects the execution environment. When run with `python3 sparql_oc.py`, it uses the built-in web.py server. When run with Gunicorn (as in Docker), it uses the WSGI interface.
 
+You can customize the Gunicorn server configuration by modifying the `gunicorn.conf.py` file.
+
 ### Dockerfile
 
 You can change these variables in the Dockerfile:
@@ -129,6 +131,9 @@ ENV BASE_URL="sparql.opencitations.net" \
     SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
     SYNC_ENABLED="true"
 
+
+# Ensure Python output is unbuffered
+ENV PYTHONUNBUFFERED=1
 # Install system dependencies required for Python package compilation
 RUN apt-get update && \
     apt-get install -y \
@@ -150,10 +155,4 @@ RUN pip install -r requirements.txt
 EXPOSE 8080
 
 # Start the application with gunicorn for production
-CMD ["gunicorn", \
-     "-w", "2", \
-     "--worker-class", "gevent", \
-     "--worker-connections", "800", \
-     "--timeout", "1200", \
-     "-b", "0.0.0.0:8080", \
-     "sparql_oc:application"]
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "sparql_oc:application"]

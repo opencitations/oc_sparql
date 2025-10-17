@@ -255,7 +255,7 @@ class Static:
             return f.read()
 
 
-# Run the application
+# Run the application on localhost for testing/development
 if __name__ == "__main__":
     # Add startup log
     print("Starting SPARQL OpenCitations web application...")
