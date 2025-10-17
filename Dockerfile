@@ -33,4 +33,10 @@ EXPOSE 8080
 
 # Start the application
 # The Python script will now read environment variables for SPARQL configurations
-CMD ["python3", "sparql_oc.py"]
+CMD ["gunicorn", \
+     "-w", "2", \
+     "--worker-class", "gevent", \
+     "--worker-connections", "800", \
+     "--timeout", "1200", \
+     "-b", "0.0.0.0:8080", \
+     "sparql_oc:application"]
