@@ -357,6 +357,10 @@ td ar + ar {
 /* ================================= */
 .search-extra{font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;}
 
+.search-box *{
+    font-size: 1.1rem !important;
+  }
+
 .search-entry{
   font-size: 230%;
   margin-top: 70px;
@@ -560,6 +564,16 @@ input[type=range]::-moz-range-track {
 
 
 @media only screen and (max-width: 700px) {
+
+  .container{
+    padding: 0px !important;
+  }
+
+  .search-entry {
+    width: 100% !important;
+    padding: 0px !important;
+  }
+
   #search_header{
     font-size: 85%;
   }
@@ -571,6 +585,26 @@ input[type=range]::-moz-range-track {
     float:left;
     width: 100%;
   }
+
+  .search-box *{
+    font-size: 1.4rem !important;
+  }
+
+  .search-box input{
+    width: 100% !important;
+  }
+  .search-box select{
+    margin: 0px !important;
+    width: 100% !important;
+    max-width: unset !important;
+    color: var(--main-bg-color);
+
+  }
+  .search-box button{
+    margin-top: 20px;
+    width: 100% !important;
+  }
+
   .limit-results {
     margin-top: 20px;
     display: inline-block;

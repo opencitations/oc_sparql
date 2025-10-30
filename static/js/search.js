@@ -87,7 +87,8 @@ var search = (function () {
 				data: null,
 				category: "",
 				filters : {"limit":null, "arr_entries":[], "fields":[], "data":null},
-				view: {"data": null, "page": 0, "page_limit": null, "fields_filter_index":{}, "sort": {"field":null, "order":null, "type":null}}
+				view: {"data": null, "page": 0, "page_limit": null, "fields_filter_index":{}, "sort": {"field":null, "order":null, "type":null}},
+				processed_ext_data: new Set()
 		}
 
 		function init_oscar_obj(){
@@ -103,7 +104,8 @@ var search = (function () {
 							'data': null,
 							'category': "",
 							'filters' : {"limit":null, "arr_entries":[], "fields":[], "data":null},
-							'view': {"data": null, "page": 0, "page_limit": null, "fields_filter_index":{}, "sort": {"field":null, "order":null, "type":null}}
+							'view': {"data": null, "page": 0, "page_limit": null, "fields_filter_index":{}, "sort": {"field":null, "order":null, "type":null}},
+							'processed_ext_data': new Set()
 					}
 			}
 		}
@@ -524,6 +526,10 @@ var search = (function () {
 			_build_header_sec();
 			_sort_results();
 			htmldom.update_res_table(table_conf,search_conf_json);
+			
+			// Load external data for initially visible results
+			_load_ext_data_for_visible_results();
+			
 			return {
 				"table_conf": JSON.parse(JSON.stringify(table_conf)),
 				"cat_conf": JSON.parse(JSON.stringify(cat_conf)),
@@ -698,6 +704,73 @@ var search = (function () {
 				}
 		}
 
+		// Load external data only for visible results
+		function _load_ext_data_for_visible_results() {
+			var results = table_conf.view.data["results"]["bindings"];
+			if (results.length === 0) return;
+
+			var i_from = table_conf.view.page * table_conf.view.page_limit;
+			var i_to = i_from + table_conf.view.page_limit;
+			if (i_to > results.length) {i_to = results.length;}
+
+			var category_conf_obj = cat_conf;
+			var fields = category_conf_obj.fields;
+			var ext_data_fields = [];
+			
+			for (var i = 0; i < fields.length; i++) {
+				if (fields[i].value.startsWith("ext_data")) {
+					var all_parts = fields[i].value.split(".");
+					var data_field = "";
+					var sep = ".";
+					for (var j = 2; j < all_parts.length; j++) {
+						if (j == all_parts.length-1) {
+							sep = "";
+						}
+						data_field = data_field + all_parts[j] + sep;
+					}
+					ext_data_fields.push({
+						"full_name": fields[i].value,
+						"func_name": all_parts[1],
+						"data_field": data_field
+					});
+				}
+			}
+
+			for (var i = i_from; i < i_to; i++) {
+				var result = results[i];
+				var result_key = result[table_conf.data_key].value;
+				
+				if (!table_conf.processed_ext_data.has(result_key)) {
+					table_conf.processed_ext_data.add(result_key);
+					
+					for (var j = 0; j < ext_data_fields.length; j++) {
+						var key_full_name = ext_data_fields[j]["full_name"];
+						var key_func_name = ext_data_fields[j]["func_name"];
+						var func_obj = category_conf_obj["ext_data"][key_func_name];
+						
+						if (func_obj != undefined) {
+							var async_val = true;
+							if (func_obj["async"] != undefined) {
+								async_val = func_obj["async"];
+							}
+
+							_exec_ext_data(
+								key_func_name,
+								func_obj,
+								result[table_conf.data_key].value,
+								async_val,
+								search.callbk_update_data_entry_val,
+								key_full_name,
+								func_obj.name,
+								result,
+								ext_data_fields[j]["data_field"]
+							);
+						}
+					}
+				}
+			}
+		}
+
 		/*init all the local data*/
 		function _init_data(json_data, callbk = null, callbk_query = null, check_and_update = false){
 			table_conf.category = cat_conf.name;
@@ -776,36 +849,17 @@ var search = (function () {
 			table_conf.data.head.vars = new_header;
 			//console.log(table_conf.data.head.vars);
 
-			// now the results
+			// Initialize ext_data fields and make API calls for visible results only
 			for (var i = 0; i < table_conf.data.results.bindings.length; i++) {
-
 				for (var j = 0; j < ext_data_fields.length; j++) {
 					var key_full_name = ext_data_fields[j]["full_name"];
 					var key_func_name = ext_data_fields[j]["func_name"];
 					var func_obj = category_conf_obj["ext_data"][key_func_name];
 					if (func_obj != undefined) {
-						var async_val = true;
-						if (func_obj["async"] != undefined) {
-								async_val = func_obj["async"];
-						}
-
 						table_conf.data.results.bindings[i][key_full_name] = {"value":"", "label":""};
-						var ext_res = _exec_ext_data(
-									key_func_name,
-									func_obj,
-									table_conf.data.results.bindings[i][table_conf.data_key].value,
-									async_val,
-									search.callbk_update_data_entry_val,
-									key_full_name,
-									func_obj.name,
-									table_conf.data.results.bindings[i],
-									ext_data_fields[j]["data_field"]
-						);
-
 					}
 				}
 			}
-			//console.log(table_conf.data.results.bindings);
 
 			//set all the other table_conf fields
 			//init all the filtered fields
@@ -1629,6 +1683,9 @@ var search = (function () {
 				build_adv_sparql_query: build_adv_sparql_query,
 				change_search_data: change_search_data,
 				get_search_data: get_search_data,
+
+				//lazy loading function
+				_load_ext_data_for_visible_results: _load_ext_data_for_visible_results,
 
 				//others
 				callbk_update_data_entry_val: callbk_update_data_entry_val
@@ -2997,6 +3054,11 @@ var htmldom = (function () {
 
 				// Initialize touch-friendly controls
 				initTouchFriendlyControls();
+
+				// Load external data for visible results only after table is rendered
+				if (typeof search !== 'undefined' && search._load_ext_data_for_visible_results) {
+					search._load_ext_data_for_visible_results();
+				}
 
 				function __build_page(){
 					// create new tables
