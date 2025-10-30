@@ -10,7 +10,7 @@
 }
 
 .nav-link {
-    transition: color 0.3s ease;
+  transition: color 0.3s ease;
 }
 
 .nav-link:hover {
@@ -150,6 +150,14 @@ main {
         border-bottom: none !important;
         box-shadow: none !important;
     }
+    .nav-link.active {
+      color: #9931FC !important;
+      font-weight: 600!important;
+    }
+}
+
+footer {
+  padding-bottom: 0.5em;
 }
 
 
@@ -184,6 +192,21 @@ main {
     display: block;
     animation: fadeIn 0.2s ease;
   }
+
+  /* Center navigation menu ignoring logo position only on desktop */
+  .navbar-nav-centered {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.2em;
+  }
+
+  .nav-link.active {
+    color: #9931FC !important;
+    font-weight: 600!important;
+    border-bottom: 2px solid #9931FC;
+    background-color: rgba(184, 120, 244, 0.07);
+  } 
   
   @keyframes fadeIn {
     from {
