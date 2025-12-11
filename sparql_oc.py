@@ -46,25 +46,26 @@ active = {
 urls = (
     "/", "Main",
     "/static/(.*)", "Static",
+    "/health", "Health",
     "/meta", "SparqlMeta",
     '/favicon.ico', 'Favicon',
     "/index", "SparqlIndex"
 )
 
 # Set the web logger
-web_logger = WebLogger(env_config["base_url"], env_config["log_dir"], [
-    "HTTP_X_FORWARDED_FOR", # The IP address of the client
-    "REMOTE_ADDR",          # The IP address of internal balancer
-    "HTTP_USER_AGENT",      # The browser type of the visitor
-    "HTTP_REFERER",         # The URL of the page that called your program
-    "HTTP_HOST",            # The hostname of the page being attempted
-    "REQUEST_URI",          # The interpreted pathname of the requested document
-                            # or CGI (relative to the document root)
-    "HTTP_AUTHORIZATION",   # Access token
-    ],
-    # comment this line only for test purposes
-     {"REMOTE_ADDR": ["130.136.130.1", "130.136.2.47", "127.0.0.1"]}
-)
+# web_logger = WebLogger(env_config["base_url"], env_config["log_dir"], [
+#     "HTTP_X_FORWARDED_FOR", # The IP address of the client
+#     "REMOTE_ADDR",          # The IP address of internal balancer
+#     "HTTP_USER_AGENT",      # The browser type of the visitor
+#     "HTTP_REFERER",         # The URL of the page that called your program
+#     "HTTP_HOST",            # The hostname of the page being attempted
+#     "REQUEST_URI",          # The interpreted pathname of the requested document
+#                             # or CGI (relative to the document root)
+#     "HTTP_AUTHORIZATION",   # Access token
+#     ],
+#     # comment this line only for test purposes
+#      {"REMOTE_ADDR": ["130.136.130.1", "130.136.2.47", "127.0.0.1"]}
+# )
 
 render = web.template.render(c["html"], globals={
     'str': str,
@@ -102,6 +103,12 @@ class Favicon:
         )
         protocol = 'https' if is_https else 'http'
         raise web.seeother(f"{protocol}://{web.ctx.host}/static/favicon.ico")
+    
+class Health:
+    """Lightweight health check endpoint for Kubernetes probes"""
+    def GET(self):
+        web.header('Content-Type', 'application/json')
+        return '{"status": "ok"}'
 
 class Header:
     def GET(self):
@@ -116,7 +123,7 @@ class Sparql:
         self.collparam = ["query"]
 
     def GET(self):
-        web_logger.mes()
+        #web_logger.mes()
         content_type = web.ctx.env.get('CONTENT_TYPE')
         return self.__run_query_string(self.sparql_endpoint_title, web.ctx.env.get("QUERY_STRING"), content_type)
 
@@ -158,7 +165,7 @@ class Sparql:
                 web.header('Content-Type', 'application/sparql-results+json')
             else:
                 web.header('Content-Type', req.headers["content-type"])
-            web_logger.mes()
+            #web_logger.mes()
             req.encoding = "utf-8"
             return req.text
         else:
@@ -179,7 +186,7 @@ class Sparql:
         parsed_query = urlparse.parse_qs(query_string)
         current_subdomain = web.ctx.host.split('.')[0].lower()
         if query_string is None or query_string.strip() == "":
-            web_logger.mes()
+            #web_logger.mes()
             return getattr(render, self.sparql_endpoint_title)(
                 active=active, 
                 sp_title=self.sparql_endpoint_title, 
@@ -210,7 +217,7 @@ class Sparql:
 
 class Main:
     def GET(self):
-        web_logger.mes()
+        #web_logger.mes()
         current_subdomain = web.ctx.host.split('.')[0].lower()
         return render.sparql(active="", sp_title="", sparql_endpoint="", current_subdomain=current_subdomain, render=render)
 
