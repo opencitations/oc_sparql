@@ -46,6 +46,7 @@ active = {
 urls = (
     "/", "Main",
     "/static/(.*)", "Static",
+    "/health", "Health",
     "/meta", "SparqlMeta",
     '/favicon.ico', 'Favicon',
     "/index", "SparqlIndex"
@@ -102,6 +103,12 @@ class Favicon:
         )
         protocol = 'https' if is_https else 'http'
         raise web.seeother(f"{protocol}://{web.ctx.host}/static/favicon.ico")
+    
+class Health:
+    """Lightweight health check endpoint for Kubernetes probes"""
+    def GET(self):
+        web.header('Content-Type', 'application/json')
+        return '{"status": "ok"}'
 
 class Header:
     def GET(self):
