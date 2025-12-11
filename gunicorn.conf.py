@@ -3,14 +3,18 @@ import sys
 import subprocess
 
 # Worker configuration
-workers = 4
+workers = 5
 worker_class = "gevent"
 worker_connections = 200
 timeout = 1200
+graceful_timeout = 180
 bind = "0.0.0.0:8080"
 
+max_requests = 1000
+max_requests_jitter = 50
+
 # Logging
-accesslog = "-"
+accesslog = None
 errorlog = "-"
 loglevel = "info"
 
