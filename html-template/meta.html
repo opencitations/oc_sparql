@@ -35,6 +35,12 @@ $def with (active, sp_title, sparql_endpoint, current_subdomain, render)
         <h3 style="font-weight: 200; font-size: 2rem; margin-bottom: 0.5em;">
           <span class="oc-purple">Open</span><span class="oc-blue">Citations</span> Meta - SPARQL endpoint
         </h3>
+        <div class="alert alert-info" role="alert">
+          <strong>Note:</strong> Starting from recent data updates, DOI literal values may include an explicit
+          <code>^^xsd:string</code> datatype annotation. To ensure compatibility with both old and new data,
+          SPARQL queries should match both plain literals and typed literals.
+          You can use a <code>UNION</code> pattern as shown in the example below.
+        </div>
         <div id="yasqe"></div>
         <div id="yasr"></div>
       </div>
@@ -60,7 +66,7 @@ $def with (active, sp_title, sparql_endpoint, current_subdomain, render)
     <script>
       yasqe.options.sparql.endpoint = "$sparql_endpoint";
       var sparql_value =
-        'PREFIX datacite: <http://purl.org/spar/datacite/>\nPREFIX dcterms: <http://purl.org/dc/terms/>\nPREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>\nPREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>\nSELECT ?id ?title ?pub_date {\n  	?identifier literal:hasLiteralValue "10.1162/qss_a_00023".\n    ?br datacite:hasIdentifier ?identifier;\n    	dcterms:title ?title;\n    	prism:publicationDate ?publicationDate.\n  	BIND(STR(?publicationDate) AS ?pub_date)\n    BIND((CONCAT("doi:", "10.1162/qss_a_00023")) AS ?id)\n}';
+        'PREFIX datacite: <http://purl.org/spar/datacite/>\nPREFIX dcterms: <http://purl.org/dc/terms/>\nPREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>\nPREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nSELECT ?id ?title ?pub_date {\n  { ?identifier literal:hasLiteralValue "10.1162/qss_a_00023". }\n  UNION\n  { ?identifier literal:hasLiteralValue "10.1162/qss_a_00023"^^xsd:string. }\n    ?br datacite:hasIdentifier ?identifier;\n       dcterms:title ?title;\n         prism:publicationDate ?publicationDate.\n       BIND(STR(?publicationDate) AS ?pub_date)\n    BIND((CONCAT("doi:", "10.1162/qss_a_00023")) AS ?id)\n}';
       yasqe.setValue(sparql_value);
       yasqe.options.sparql.callbacks.complete = yasr.setResponse;
     </script>
