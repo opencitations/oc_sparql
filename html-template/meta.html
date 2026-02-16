@@ -66,7 +66,7 @@ $def with (active, sp_title, sparql_endpoint, current_subdomain, render)
     <script>
       yasqe.options.sparql.endpoint = "$sparql_endpoint";
       var sparql_value =
-        'PREFIX datacite: <http://purl.org/spar/datacite/>\nPREFIX dcterms: <http://purl.org/dc/terms/>\nPREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>\nPREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nSELECT ?id ?title ?pub_date {\n  { ?identifier literal:hasLiteralValue "10.1007/s11192-025-05420-0". }\n  UNION\n  { ?identifier literal:hasLiteralValue "10.1007/s11192-025-05420-0"^^xsd:string. }\n    ?br datacite:hasIdentifier ?identifier;\n       dcterms:title ?title;\n         prism:publicationDate ?publicationDate.\n       BIND(STR(?publicationDate) AS ?pub_date)\n    BIND((CONCAT("doi:", "10.1162/qss_a_00023")) AS ?id)\n}';
+        'PREFIX datacite: <http://purl.org/spar/datacite/>\nPREFIX dcterms: <http://purl.org/dc/terms/>\nPREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>\nPREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nSELECT ?id ?title ?pub_date {\n  { ?identifier literal:hasLiteralValue "10.1162/qss_a_00023". }\n  UNION\n  { ?identifier literal:hasLiteralValue "10.1162/qss_a_00023"^^xsd:string. }\n    ?br datacite:hasIdentifier ?identifier;\n       dcterms:title ?title;\n         prism:publicationDate ?publicationDate.\n       BIND(STR(?publicationDate) AS ?pub_date)\n    BIND((CONCAT("doi:", "10.1162/qss_a_00023")) AS ?id)\n}';
       yasqe.setValue(sparql_value);
       yasqe.options.sparql.callbacks.complete = yasr.setResponse;
     </script>
