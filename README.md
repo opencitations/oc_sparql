@@ -77,24 +77,31 @@ When static sync is enabled (via `--sync-static` or `SYNC_ENABLED=true`), the ap
 
 For local development and testing, the application uses the built-in web.py HTTP server.
 
+Install the dependencies:
+
+```bash
+uv sync
+```
+
 The application supports the following command line arguments:
 
 - `--sync-static`: Synchronize static files at startup and enable periodic sync (every 30 minutes)
 - `--port PORT`: Specify the port to run the application on (default: 8080)
 
 Examples:
+
 ```bash
 # Run with default settings
-python3 sparql_oc.py
+uv run python sparql_oc.py
 
 # Run with static sync enabled
-python3 sparql_oc.py --sync-static
+uv run python sparql_oc.py --sync-static
 
 # Run on custom port
-python3 sparql_oc.py --port 8085
+uv run python sparql_oc.py --port 8085
 
 # Run with both options
-python3 sparql_oc.py --sync-static --port 8085
+uv run python sparql_oc.py --sync-static --port 8085
 ```
 
 The Docker container is configured to run with `--sync-static` enabled by default.
@@ -114,45 +121,3 @@ The Docker container automatically uses Gunicorn and is configured with static s
 > **Note**: The application code automatically detects the execution environment. When run with `python3 sparql_oc.py`, it uses the built-in web.py server. When run with Gunicorn (as in Docker), it uses the WSGI interface.
 
 You can customize the Gunicorn server configuration by modifying the `gunicorn.conf.py` file.
-
-### Dockerfile
-
-You can change these variables in the Dockerfile:
-
-```dockerfile
-# Base image: Python slim for a lightweight container
-FROM python:3.11-slim
-
-# Define environment variables with default values
-# These can be overridden during container runtime
-ENV BASE_URL="sparql.opencitations.net" \
-    LOG_DIR="/mnt/log_dir/oc_sparql"  \
-    SPARQL_ENDPOINT_INDEX="http://qlever-service.default.svc.cluster.local:7011" \
-    SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
-    SYNC_ENABLED="true"
-
-
-# Ensure Python output is unbuffered
-ENV PYTHONUNBUFFERED=1
-# Install system dependencies required for Python package compilation
-RUN apt-get update && \
-    apt-get install -y \
-    git \
-    python3-dev \
-    build-essential
-
-# Set the working directory for our application
-WORKDIR /website
-
-# Clone the specific branch (sparql) from the repository
-# The dot at the end means clone into current directory
-RUN git clone --single-branch --branch main https://github.com/opencitations/oc_sparql .
-
-# Install Python dependencies from requirements.txt
-RUN pip install -r requirements.txt
-
-# Expose the port that our service will listen on
-EXPOSE 8080
-
-# Start the application with gunicorn for production
-CMD ["gunicorn", "-c", "gunicorn.conf.py", "sparql_oc:application"]
