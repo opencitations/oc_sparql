@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: NONE
+#
+# SPDX-License-Identifier: CC0-1.0
+
 # Base image: Python slim for a lightweight container
 FROM python:3.11-slim
 

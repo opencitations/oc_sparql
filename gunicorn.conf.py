@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Mario Petrella <mario.petrella@unibo.it>
+#
+# SPDX-License-Identifier: ISC
+
 import os
 import sys
 import subprocess

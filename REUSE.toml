@@ -1,0 +1,200 @@
+version = 1
+
+[[annotations]]
+path = [
+    "conf.json",
+    "docker_version.txt",
+    "pyproject.toml",
+    "uv.lock",
+    ".gitignore",
+    ".dockerignore",
+    ".python-version",
+    "log/.gitkeep",
+    ".github/workflows/*.yml",
+    "test/coverage-badge.svg",
+]
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "README.md"
+SPDX-FileCopyrightText = [
+    "2026 Mario Petrella <mario.petrella@unibo.it>",
+    "2026 Arcangelo Massari <arcangelo.massari@unibo.it>",
+]
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# First-party static assets (CSS/JS application code, not vendored libraries)
+[[annotations]]
+path = [
+    "static/css/authtoken.css",
+    "static/css/browser_ccc.css",
+    "static/css/browser.css",
+    "static/css/cover.css",
+    "static/css/custom.css",
+    "static/css/ldd.css",
+    "static/css/oc.css",
+    "static/css/oc-table.css",
+    "static/css/search_ccc.css",
+    "static/css/search.css",
+    "static/css/statistics.css",
+    "static/js/browser_ccc.js",
+    "static/js/browser-conf-ccc.js",
+    "static/js/browser-conf-index.js",
+    "static/js/browser-conf.js",
+    "static/js/browser.js",
+    "static/js/cookies.js",
+    "static/js/epmc.js",
+    "static/js/loadHeader.js",
+    "static/js/ramose.js",
+    "static/js/search_ccc.js",
+    "static/js/search-conf-ccc.js",
+    "static/js/search-conf-index.js",
+    "static/js/search-conf-index-v2.js",
+    "static/js/search-conf.js",
+    "static/js/search.js",
+    "static/js/sparql.js",
+    "static/js/statistics.js",
+]
+SPDX-FileCopyrightText = "2026 Mario Petrella <mario.petrella@unibo.it>"
+SPDX-License-Identifier = "ISC"
+
+# LODE (Live OWL Documentation Environment) own stylesheets, essepuntato/LODE
+[[annotations]]
+path = [
+    "static/lode/extra.css",
+    "static/lode/owl.css",
+    "static/lode/Primer.css",
+    "static/lode/rec.css",
+]
+SPDX-FileCopyrightText = "2016 Silvio Peroni <essepuntato@gmail.com>"
+SPDX-License-Identifier = "ISC"
+
+# First-party images/icons of uncertain provenance: not publicly licensed yet
+[[annotations]]
+path = [
+    "static/img/**",
+    "static/favicon.ico",
+    "static/lode/favicon.ico",
+]
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "LicenseRef-all-rights-reserved"
+
+# Bootstrap (both the vendored 5.3.3 copy and the older bundled 3.x copy)
+[[annotations]]
+path = [
+    "static/bootstrap-533/**",
+    "static/css/bootstrap.css",
+    "static/css/bootstrap.css.map",
+    "static/css/bootstrap.min.css",
+    "static/css/bootstrap.min.css.map",
+    "static/css/bootstrap-theme.css",
+    "static/css/bootstrap-theme.css.map",
+    "static/css/bootstrap-theme.min.css",
+    "static/css/bootstrap-theme.min.css.map",
+    "static/css/ie10-viewport-bug-workaround.css",
+    "static/js/bootstrap.min.js",
+    "static/js/ie10-viewport-bug-workaround.js",
+    "static/fonts/glyphicons-halflings-regular.eot",
+    "static/fonts/glyphicons-halflings-regular.svg",
+    "static/fonts/glyphicons-halflings-regular.ttf",
+    "static/fonts/glyphicons-halflings-regular.woff",
+    "static/fonts/glyphicons-halflings-regular.woff2",
+]
+SPDX-FileCopyrightText = "The Bootstrap Authors"
+SPDX-License-Identifier = "MIT"
+
+# Font Awesome 4: OFL for the font files, MIT for the CSS
+[[annotations]]
+path = [
+    "static/fonts/FontAwesome.otf",
+    "static/fonts/fontawesome-webfont.eot",
+    "static/fonts/fontawesome-webfont.svg",
+    "static/fonts/fontawesome-webfont.ttf",
+    "static/fonts/fontawesome-webfont.woff",
+    "static/fonts/fontawesome-webfont.woff2",
+]
+SPDX-FileCopyrightText = "Dave Gandy"
+SPDX-License-Identifier = "OFL-1.1"
+
+[[annotations]]
+path = "static/css/font-awesome.min.css"
+SPDX-FileCopyrightText = "Dave Gandy"
+SPDX-License-Identifier = "MIT"
+
+# jQuery
+[[annotations]]
+path = [
+    "static/js/jquery.js",
+    "static/js/jquery.min.js",
+    "static/lode/jquery.js",
+]
+SPDX-FileCopyrightText = "OpenJS Foundation and other contributors"
+SPDX-License-Identifier = "MIT"
+
+# D3.js v6
+[[annotations]]
+path = "static/js/d3.v6.min.js"
+SPDX-FileCopyrightText = "2010-2023 Mike Bostock"
+SPDX-License-Identifier = "ISC"
+
+# Yasgui / YASQE / YASR (Triply)
+[[annotations]]
+path = [
+    "static/js/yasqe.bundled.min.js",
+    "static/js/yasr.bundled.min.js",
+    "static/css/yasgui.css",
+]
+SPDX-FileCopyrightText = "Triply"
+SPDX-License-Identifier = "MIT"
+
+# Underscore.js
+[[annotations]]
+path = "static/js/underscore-min.js"
+SPDX-FileCopyrightText = "Jeremy Ashkenas, Julian Gonggrijp, and DocumentCloud and Investigative Reporters & Editors"
+SPDX-License-Identifier = "MIT"
+
+# Marked
+[[annotations]]
+path = [
+    "static/js/marked.min.js",
+    "static/lode/marked.min.js",
+]
+SPDX-FileCopyrightText = [
+    "2018 MarkedJS",
+    "2011-2018 Christopher Jeffrey",
+]
+SPDX-License-Identifier = "MIT"
+
+# HTML5 Shiv (dual-licensed, either applies)
+[[annotations]]
+path = "static/js/html5shiv.min.js"
+SPDX-FileCopyrightText = "2014 Alexander Farkas"
+SPDX-License-Identifier = "MIT OR GPL-2.0-only"
+
+# Respond.js
+[[annotations]]
+path = "static/js/respond.min.js"
+SPDX-FileCopyrightText = "2012 Scott Jehl"
+SPDX-License-Identifier = "MIT"
+
+# mark.js
+[[annotations]]
+path = "static/js/jquery.mark.min.js"
+SPDX-FileCopyrightText = "2014-2019 Julian Kühnel"
+SPDX-License-Identifier = "MIT"
+
+# jQuery.scrollTo
+[[annotations]]
+path = "static/lode/jquery.scrollTo.js"
+SPDX-FileCopyrightText = "2007 Ariel Flesler"
+SPDX-License-Identifier = "MIT"
+
+# jQuery UI Month Picker (KidSysco)
+[[annotations]]
+path = [
+    "static/js/MonthPicker.min.js",
+    "static/css/MonthPicker.min.css",
+]
+SPDX-FileCopyrightText = "KidSysco"
+SPDX-License-Identifier = "GPL-3.0-only"

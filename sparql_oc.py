@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Mario Petrella <mario.petrella@unibo.it>
+#
+# SPDX-License-Identifier: ISC
+
 import web
 import os
 import json

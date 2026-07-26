@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Mario Petrella <mario.petrella@unibo.it>
+#
+# SPDX-License-Identifier: ISC
+
 import os
 import shutil
 from git import Repo
