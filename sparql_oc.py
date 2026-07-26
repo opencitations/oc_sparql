@@ -53,7 +53,10 @@ urls = (
     "/health", "Health",
     "/meta", "SparqlMeta",
     '/favicon.ico', 'Favicon',
-    "/index", "SparqlIndex"
+    "/index", "SparqlIndex",
+    "/index/description", "IndexDescription",
+    "/meta/description", "MetaDescription",
+    "/.well-known/void", "WellKnownVoid",
 )
 
 # Set the web logger
@@ -191,6 +194,10 @@ class Sparql:
         current_subdomain = web.ctx.host.split('.')[0].lower()
         if query_string is None or query_string.strip() == "":
             #web_logger.mes()
+            web.header(
+                'Link',
+                f'</{self.sparql_endpoint_title}/description>; rel="describedby"',
+            )
             return getattr(render, self.sparql_endpoint_title)(
                 active=active, 
                 sp_title=self.sparql_endpoint_title, 
@@ -258,12 +265,104 @@ class Static:
             '.woff': 'font/woff',
             '.woff2': 'font/woff2',
             '.ttf': 'font/ttf',
+            '.ttl': 'text/turtle',
+            '.jsonld': 'application/ld+json',
+            '.rdf': 'application/rdf+xml',
+            '.nt': 'application/n-triples',
         }
 
         web.header('Content-Type', content_types.get(ext, 'application/octet-stream'))
 
         with open(file_path, 'rb') as f:
             return f.read()
+
+
+_SD_TYPES = {
+    "text/turtle": (".ttl", "text/turtle; charset=utf-8"),
+    "application/ld+json": (".jsonld", "application/ld+json; charset=utf-8"),
+    "application/rdf+xml": (".rdf", "application/rdf+xml; charset=utf-8"),
+    "application/n-triples": (".nt", "application/n-triples; charset=utf-8"),
+    "text/html": (".html", "text/html; charset=utf-8"),
+}
+_SD_DEFAULT_EXT = ".ttl"
+_SD_DEFAULT_CT = "text/turtle; charset=utf-8"
+
+
+def _parse_accept(accept):
+    media_ranges = []
+    for position, value in enumerate(accept.split(",")):
+        media_type, *parameters = (part.strip() for part in value.split(";"))
+        quality = 1.0
+        for parameter in parameters:
+            name, parameter_value = parameter.split("=", 1)
+            if name.lower() == "q":
+                quality = float(parameter_value)
+        resource_type, resource_subtype = media_type.lower().split("/", 1)
+        specificity = int(resource_type != "*") + int(resource_subtype != "*")
+        media_ranges.append(
+            (resource_type, resource_subtype, quality, specificity, -position)
+        )
+    return media_ranges
+
+
+def _select_sd_type(accept):
+    if accept is None or accept.strip() == "":
+        return _SD_DEFAULT_EXT, _SD_DEFAULT_CT
+
+    media_ranges = _parse_accept(accept)
+    representations = []
+    for server_preference, (media_type, representation) in enumerate(_SD_TYPES.items()):
+        resource_type, resource_subtype = media_type.split("/", 1)
+        matches = [
+            (quality, specificity, client_preference)
+            for (
+                accepted_type,
+                accepted_subtype,
+                quality,
+                specificity,
+                client_preference,
+            ) in media_ranges
+            if accepted_type in ("*", resource_type)
+            and accepted_subtype in ("*", resource_subtype)
+        ]
+        if matches:
+            quality, specificity, _ = max(matches, key=lambda item: (item[1], item[2]))
+            if quality > 0:
+                representations.append(
+                    (quality, specificity, -server_preference, representation)
+                )
+
+    if not representations:
+        raise web.notacceptable()
+    return max(representations)[3]
+
+
+def _serve_sd_file(base_name):
+    accept = web.ctx.env.get("HTTP_ACCEPT")
+    ext, ct = _select_sd_type(accept)
+    file_path = os.path.join("static", "service-descriptions", f"{base_name}{ext}")
+    if not os.path.exists(file_path):
+        raise web.notfound()
+    web.header("Content-Type", ct)
+    web.header("Access-Control-Allow-Origin", "*")
+    web.header("Vary", "Accept")
+    with open(file_path, 'rb') as f:
+        return f.read()
+
+
+class IndexDescription:
+    def GET(self):
+        return _serve_sd_file("index")
+
+
+class MetaDescription:
+    def GET(self):
+        return _serve_sd_file("meta")
+
+
+class WellKnownVoid:
+    def GET(self):
+        return _serve_sd_file("void")
 
 
 # Run the application on localhost for testing/development
