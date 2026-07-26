@@ -26,3 +26,8 @@ var/
 .installed.cfg
 *.egg
 .DS_Store
+
+# Test / coverage artifacts
+.coverage
+htmlcov/
+.pytest_cache/

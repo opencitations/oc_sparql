@@ -1,7 +1,7 @@
 [project]
 name = "oc-sparql"
 version = "1.5.1"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "gevent>=26.7.0",
     "gitpython>=3.1.55",
@@ -10,3 +10,18 @@ dependencies = [
     "requests>=2.34.2",
     "web-py>=0.76",
 ]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=term-missing --cov-report=html"
+pythonpath = "."
+
+[tool.coverage.run]
+source = ["src"]
