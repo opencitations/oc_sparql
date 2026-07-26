@@ -23,6 +23,28 @@ The service provides two main SPARQL endpoints:
 - SPARQL Update queries are not permitted
 - Request logging
 - Docker deployment ready
+- SPARQL 1.1 Service Description / VoID metadata for both endpoints
+
+## Service Descriptions
+
+Each endpoint exposes a SPARQL 1.1 Service Description / VoID description at a dedicated path, content-negotiated between Turtle, JSON-LD, RDF/XML, N-Triples and HTML:
+
+- `/index/description`: Service description for the Index endpoint
+- `/meta/description`: Service description for the Meta endpoint
+- `/.well-known/void`: Combined VoID description for both datasets
+
+### Regenerating
+
+The description files under `static/service-descriptions/` are pre-generated. To regenerate:
+
+```bash
+uv run python -m src.endpoint_metadata index \
+  --endpoint "$SPARQL_ENDPOINT_INDEX" \
+  --public-endpoint https://sparql.opencitations.net/index \
+  --output static/service-descriptions/index
+```
+
+Each invocation writes `.ttl`, `.jsonld`, `.rdf`, `.nt` and `.html` files for its output path. `--endpoint` should be the internal SPARQL endpoint used to run the statistics queries; `--public-endpoint` is the externally-visible URL recorded in the generated description.
 
 ## Configuration
 
