@@ -1,5 +1,12 @@
 # OpenCitations SPARQL Service
 
+[<img src="https://img.shields.io/badge/powered%20by-OpenCitations-%239931FC?labelColor=2D22DE" />](http://opencitations.net)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](pyproject.toml)
+[![Run tests](https://github.com/opencitations/oc_sparql/actions/workflows/run_tests.yml/badge.svg?branch=main)](https://github.com/opencitations/oc_sparql/actions/workflows/run_tests.yml)
+[![Coverage](test/coverage-badge.svg)](https://opencitations.github.io/oc_sparql/coverage/)
+[![License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
+[![REUSE status](https://api.reuse.software/badge/github.com/opencitations/oc_sparql)](https://api.reuse.software/info/github.com/opencitations/oc_sparql)
+
 This repository contains the SPARQL service for OpenCitations, allowing users to query the OpenCitations datasets using SPARQL.
 
 ## Overview
