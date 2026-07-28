@@ -150,3 +150,16 @@ The Docker container automatically uses Gunicorn and is configured with static s
 > **Note**: The application code automatically detects the execution environment. When run with `python3 sparql_oc.py`, it uses the built-in web.py server. When run with Gunicorn (as in Docker), it uses the WSGI interface.
 
 You can customize the Gunicorn server configuration by modifying the `gunicorn.conf.py` file.
+
+### Building the Docker image locally
+ 
+The repository already includes a `Dockerfile`, so there is nothing to write by hand. The image is built from your local checkout: the Dockerfile copies the local source code into the container (`COPY . .`) and installs the dependencies with uv from the lockfile. This means that any changes you make to the code will be included in the image, which is handy to test modifications before pushing them.
+ 
+From the repository root:
+ 
+```bash
+docker build -t oc_sparql:local .
+docker run -p 8080:8080 oc_sparql:local
+```
+ 
+The container starts with Gunicorn, exactly as in production. The environment variables (`BASE_URL`, `LOG_DIR`, `SPARQL_ENDPOINT_INDEX`, `SPARQL_ENDPOINT_META`, `SYNC_ENABLED`) have default values defined in the Dockerfile and can be overridden at runtime with `docker run -e VAR=value`
