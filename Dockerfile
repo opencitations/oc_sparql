@@ -39,4 +39,4 @@ COPY . .
 EXPOSE 8080
 
 # Start the application with gunicorn instead of python directly
-CMD ["gunicorn", "-c", "gunicorn.conf.py", "sparql_oc:application"]
+CMD ["uv", "run", "gunicorn", "-c", "gunicorn.conf.py", "sparql_oc:application"]

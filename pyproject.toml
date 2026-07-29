@@ -1,6 +1,6 @@
 [project]
 name = "oc-sparql"
-version = "1.5.2"
+version = "1.5.3"
 requires-python = ">=3.10,<3.13"
 dependencies = [
     "gevent>=26.7.0",
