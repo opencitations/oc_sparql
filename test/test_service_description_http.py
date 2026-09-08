@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: ISC
 
-import shutil
 from pathlib import Path
 
 import pytest
@@ -24,12 +23,12 @@ FIXTURE_FILES = {
 
 
 @pytest.fixture
-def service_descriptions():
+def service_descriptions(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.chdir(tmp_path)
     SERVICE_DESCRIPTIONS.mkdir(parents=True, exist_ok=True)
     for name, content in FIXTURE_FILES.items():
         (SERVICE_DESCRIPTIONS / name).write_bytes(content)
-    yield
-    shutil.rmtree(SERVICE_DESCRIPTIONS)
+    return SERVICE_DESCRIPTIONS
 
 
 @pytest.mark.parametrize(

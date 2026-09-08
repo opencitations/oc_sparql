@@ -12,6 +12,7 @@ path = [
     "log/.gitkeep",
     ".github/workflows/*.yml",
     "test/coverage-badge.svg",
+    "static/service-descriptions/*",
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0"
