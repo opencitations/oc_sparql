@@ -1,0 +1,6 @@
+All rights reserved.
+
+These files are not licensed under any of the open licenses used elsewhere
+in this repository. They are third-party or provenance-unclear assets
+(logos, photos, partner/sponsor branding) kept for display purposes only,
+and no rights to reuse, modify, or redistribute them are granted here.

@@ -1,5 +1,12 @@
 # OpenCitations SPARQL Service
 
+[<img src="https://img.shields.io/badge/powered%20by-OpenCitations-%239931FC?labelColor=2D22DE" />](http://opencitations.net)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](pyproject.toml)
+[![Run tests](https://github.com/opencitations/oc_sparql/actions/workflows/run_tests.yml/badge.svg?branch=main)](https://github.com/opencitations/oc_sparql/actions/workflows/run_tests.yml)
+[![Coverage](test/coverage-badge.svg)](https://opencitations.github.io/oc_sparql/coverage/)
+[![License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
+[![REUSE status](https://api.reuse.software/badge/github.com/opencitations/oc_sparql)](https://api.reuse.software/info/github.com/opencitations/oc_sparql)
+
 This repository contains the SPARQL service for OpenCitations, allowing users to query the OpenCitations datasets using SPARQL.
 
 ## Overview
@@ -16,6 +23,28 @@ The service provides two main SPARQL endpoints:
 - SPARQL Update queries are not permitted
 - Request logging
 - Docker deployment ready
+- SPARQL 1.1 Service Description / VoID metadata for both endpoints
+
+## Service Descriptions
+
+Each endpoint exposes a SPARQL 1.1 Service Description / VoID description at a dedicated path, content-negotiated between Turtle, JSON-LD, RDF/XML, N-Triples and HTML:
+
+- `/index/description`: Service description for the Index endpoint
+- `/meta/description`: Service description for the Meta endpoint
+- `/.well-known/void`: Combined VoID description for both datasets
+
+### Regenerating
+
+The description files under `static/service-descriptions/` are pre-generated. To regenerate:
+
+```bash
+uv run python -m src.endpoint_metadata index \
+  --endpoint "$SPARQL_ENDPOINT_INDEX" \
+  --public-endpoint https://sparql.opencitations.net/index \
+  --output static/service-descriptions/index
+```
+
+Each invocation writes `.ttl`, `.jsonld`, `.rdf`, `.nt` and `.html` files for its output path. `--endpoint` should be the internal SPARQL endpoint used to run the statistics queries; `--public-endpoint` is the externally-visible URL recorded in the generated description.
 
 ## Configuration
 
@@ -77,24 +106,31 @@ When static sync is enabled (via `--sync-static` or `SYNC_ENABLED=true`), the ap
 
 For local development and testing, the application uses the built-in web.py HTTP server.
 
+Install the dependencies:
+
+```bash
+uv sync
+```
+
 The application supports the following command line arguments:
 
 - `--sync-static`: Synchronize static files at startup and enable periodic sync (every 30 minutes)
 - `--port PORT`: Specify the port to run the application on (default: 8080)
 
 Examples:
+
 ```bash
 # Run with default settings
-python3 sparql_oc.py
+uv run python sparql_oc.py
 
 # Run with static sync enabled
-python3 sparql_oc.py --sync-static
+uv run python sparql_oc.py --sync-static
 
 # Run on custom port
-python3 sparql_oc.py --port 8085
+uv run python sparql_oc.py --port 8085
 
 # Run with both options
-python3 sparql_oc.py --sync-static --port 8085
+uv run python sparql_oc.py --sync-static --port 8085
 ```
 
 The Docker container is configured to run with `--sync-static` enabled by default.
@@ -115,44 +151,15 @@ The Docker container automatically uses Gunicorn and is configured with static s
 
 You can customize the Gunicorn server configuration by modifying the `gunicorn.conf.py` file.
 
-### Dockerfile
-
-You can change these variables in the Dockerfile:
-
-```dockerfile
-# Base image: Python slim for a lightweight container
-FROM python:3.11-slim
-
-# Define environment variables with default values
-# These can be overridden during container runtime
-ENV BASE_URL="sparql.opencitations.net" \
-    LOG_DIR="/mnt/log_dir/oc_sparql"  \
-    SPARQL_ENDPOINT_INDEX="http://qlever-service.default.svc.cluster.local:7011" \
-    SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
-    SYNC_ENABLED="true"
-
-
-# Ensure Python output is unbuffered
-ENV PYTHONUNBUFFERED=1
-# Install system dependencies required for Python package compilation
-RUN apt-get update && \
-    apt-get install -y \
-    git \
-    python3-dev \
-    build-essential
-
-# Set the working directory for our application
-WORKDIR /website
-
-# Clone the specific branch (sparql) from the repository
-# The dot at the end means clone into current directory
-RUN git clone --single-branch --branch main https://github.com/opencitations/oc_sparql .
-
-# Install Python dependencies from requirements.txt
-RUN pip install -r requirements.txt
-
-# Expose the port that our service will listen on
-EXPOSE 8080
-
-# Start the application with gunicorn for production
-CMD ["gunicorn", "-c", "gunicorn.conf.py", "sparql_oc:application"]
+### Building the Docker image locally
+ 
+The repository already includes a `Dockerfile`, so there is nothing to write by hand. The image is built from your local checkout: the Dockerfile copies the local source code into the container (`COPY . .`) and installs the dependencies with uv from the lockfile. This means that any changes you make to the code will be included in the image, which is handy to test modifications before pushing them.
+ 
+From the repository root:
+ 
+```bash
+docker build -t oc_sparql:local .
+docker run -p 8080:8080 oc_sparql:local
+```
+ 
+The container starts with Gunicorn, exactly as in production. The environment variables (`BASE_URL`, `LOG_DIR`, `SPARQL_ENDPOINT_INDEX`, `SPARQL_ENDPOINT_META`, `SYNC_ENABLED`) have default values defined in the Dockerfile and can be overridden at runtime with `docker run -e VAR=value`
