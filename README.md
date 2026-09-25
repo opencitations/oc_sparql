@@ -64,7 +64,7 @@ For instance:
 BASE_URL=sparql.opencitations.net
 LOG_DIR=/home/dir/log/
 SPARQL_ENDPOINT_INDEX=http://qlever-service.default.svc.cluster.local:7011  
-SPARQL_ENDPOINT_META=http://virtuoso-service.default.svc.cluster.local:8890/sparql
+SPARQL_ENDPOINT_META=http://meta-qlever-service.default.svc.cluster.local:7011
 SYNC_ENABLED=true
 ```
 

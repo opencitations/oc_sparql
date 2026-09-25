@@ -12,7 +12,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.11.32@sha256:df4cae8f3a96d175e2e5f992e5975500
 ENV BASE_URL="sparql.opencitations.net" \
     LOG_DIR="/mnt/log_dir/oc_sparql"  \
     SPARQL_ENDPOINT_INDEX="http://qlever-service.default.svc.cluster.local:7011" \
-    SPARQL_ENDPOINT_META="http://virtuoso-service.default.svc.cluster.local:8890/sparql" \
+    SPARQL_ENDPOINT_META="http://meta-qlever-service.default.svc.cluster.local:7011" \
     SYNC_ENABLED="true"
 
 # Ensure Python output is unbuffered
