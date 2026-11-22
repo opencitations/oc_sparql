@@ -1,13 +1,14 @@
 [project]
 name = "oc-sparql"
-version = "1.6.2"
+version = "1.7.0"
 requires-python = ">=3.10,<3.13"
 dependencies = [
     "gevent>=26.7.0",
     "gitpython>=3.1.62",
-    "gunicorn>=26.0.0",
+    "gunicorn[gevent]>=27.0.1",
     "rdflib>=7.6.0",
     "requests>=2.34.2",
+    "setuptools>=84.1.0",
     "urllib3>=2.8.0",
     "web-py>=0.76",
 ]
